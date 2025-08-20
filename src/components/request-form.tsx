@@ -24,6 +24,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
 import { Confetti } from "./confetti";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { getUserDetails } from "@/lib/user-store";
 
 const requestFormSchema = z.object({
   amount: z.coerce
@@ -59,14 +60,14 @@ export function RequestForm({ setSheetOpen }: RequestFormProps) {
 
   const onSubmit = (data: RequestFormValues) => {
     startTransition(async () => {
-      const result = await createRequestAction(data);
+      const userDetails = getUserDetails();
+      const result = await createRequestAction(data, userDetails);
       if (result.success) {
         setShowConfetti(true);
         toast({
-          title: "🚀 Request Matched!",
+          title: "🚀 Request Created!",
           description: (
             <div>
-              <p className="font-bold">AI Matching Analysis:</p>
               <p className="text-sm text-muted-foreground">{result.reasoning}</p>
             </div>
           ),
@@ -211,7 +212,7 @@ export function RequestForm({ setSheetOpen }: RequestFormProps) {
 
           <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={isPending}>
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Find My Match
+            Create Request
           </Button>
         </form>
       </Form>

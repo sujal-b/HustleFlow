@@ -3,8 +3,8 @@
 
 import { revalidatePath } from "next/cache";
 import * as z from "zod";
-import { matchRequestUsers, type MatchRequestUsersInput } from "@/ai/flows/match-request-users";
 import { addRequest } from "@/lib/requests-store";
+import type { UserDetails } from "@/lib/user-store";
 
 const requestFormSchema = z.object({
   amount: z.coerce.number(),
@@ -13,6 +13,15 @@ const requestFormSchema = z.object({
   duration: z.enum(["1", "3", "7"]),
 });
 
+const userDetailsSchema = z.object({
+    token: z.string(),
+    name: z.string(),
+    room: z.string(),
+    contact: z.string().optional(),
+    expiresAt: z.number(),
+});
+
+
 type ActionResponse = {
   success: boolean;
   error?: string;
@@ -20,7 +29,8 @@ type ActionResponse = {
 };
 
 export async function createRequestAction(
-  data: z.infer<typeof requestFormSchema>
+  data: z.infer<typeof requestFormSchema>,
+  userDetails: UserDetails | null,
 ): Promise<ActionResponse> {
   const validation = requestFormSchema.safeParse(data);
   if (!validation.success) {
@@ -28,33 +38,24 @@ export async function createRequestAction(
     return { success: false, error: "Invalid form data provided." };
   }
   
+  const userValidation = userDetailsSchema.safeParse(userDetails);
+   if (!userValidation.success || !userDetails) {
+    console.error("User details validation failed:", userValidation.error);
+    return { success: false, error: "Invalid user details provided." };
+  }
+
   const { amount, type, urgency, duration } = validation.data;
 
   try {
-    const newRequest = addRequest({
+    addRequest({
         amount,
         type,
         urgency,
         duration
-    });
-
-    const aiInput: MatchRequestUsersInput = {
-        requestId: newRequest.id,
-        amount: newRequest.amount,
-        currency: newRequest.currency,
-        cashOrDigital: newRequest.type,
-        urgency: newRequest.urgency,
-        duration: newRequest.duration,
-        userPreferences: "Prefers users with quick response times.",
-        user: {
-            token: newRequest.user.token
-        }
-    };
-
-    const aiResult = await matchRequestUsers(aiInput);
+    }, userDetails);
 
     revalidatePath("/");
-    return { success: true, reasoning: aiResult.reasoning };
+    return { success: true, reasoning: "Your request has been successfully created and is now visible to others. You will be notified when a match is found." };
 
   } catch (error) {
     console.error("Error creating request:", error);

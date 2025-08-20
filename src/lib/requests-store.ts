@@ -1,6 +1,6 @@
 
 import type { ExchangeRequest } from './types';
-import { getUserDetails } from './user-store';
+import type { UserDetails } from './user-store';
 
 // In-memory store for demo purposes
 const requests: ExchangeRequest[] = [];
@@ -19,8 +19,10 @@ export const getRequests = (): ExchangeRequest[] => {
     });
 };
 
-export const addRequest = (request: Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency'>) => {
-    const userDetails = getUserDetails();
+export const addRequest = (
+    request: Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency'>,
+    userDetails: UserDetails,
+) => {
     if (!userDetails?.name) {
         throw new Error("User details not found. Cannot create request.");
     }
