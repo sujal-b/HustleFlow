@@ -1,4 +1,3 @@
-
 "use client"
 
 import type { ExchangeRequest } from '@/lib/types';
@@ -41,10 +40,9 @@ import { useToast } from '@/hooks/use-toast';
 import { deleteRequestAction } from '@/app/actions';
 import { useRouter } from 'next/navigation';
 
-
 interface RequestCardProps {
   request: ExchangeRequest;
-  isHighlighted?: boolean;
+  isHighlighted?: boolean; // This prop is now correctly typed
 }
 
 const ADMIN_TOKEN = "admin_super_secret_token";
@@ -111,6 +109,7 @@ export function RequestCard({ request, isHighlighted = false }: RequestCardProps
 
   return (
     <AlertDialog open={isDeleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
+    {/* This is the key change: applying styles based on the isHighlighted prop */}
     <Card className={cn(
       "flex flex-col hover:shadow-lg transition-shadow duration-300 bg-card hover:bg-card/90",
        isHighlighted && "relative ring-2 ring-accent/80 ring-offset-2 ring-offset-background animate-pulse"

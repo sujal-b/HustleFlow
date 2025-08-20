@@ -36,25 +36,30 @@ export default function AdminPage() {
         if (userDetails?.token !== ADMIN_TOKEN) {
             redirect('/');
         } else {
-            const allRequests = getRequests();
-            setRequests(allRequests);
+            // Make this an async function and await the result
+            const fetchRequests = async () => {
+                const allRequests = await getRequests();
+                setRequests(allRequests);
 
-            // --- Logic for All Users ---
-            const uniqueUsers = new Map<string, UserInfo>();
-            
-            allRequests.forEach(request => {
-                if (!uniqueUsers.has(request.user.token)) {
-                    uniqueUsers.set(request.user.token, request.user);
-                }
-                request.offers.forEach(offer => {
-                    if (!uniqueUsers.has(offer.user.token)) {
-                        uniqueUsers.set(offer.user.token, offer.user);
+                // ... rest of the logic
+                const uniqueUsers = new Map<string, UserInfo>();
+
+                allRequests.forEach(request => {
+                    if (!uniqueUsers.has(request.user.token)) {
+                        uniqueUsers.set(request.user.token, request.user);
                     }
+                    request.offers.forEach(offer => {
+                        if (!uniqueUsers.has(offer.user.token)) {
+                            uniqueUsers.set(offer.user.token, offer.user);
+                        }
+                    });
                 });
-            });
-            setAllUsers(Array.from(uniqueUsers.values()));
+                setAllUsers(Array.from(uniqueUsers.values()));
+                setLoading(false);
+            };
+
+            fetchRequests();
         }
-        setLoading(false);
     }, []);
 
     const currencyFormatter = new Intl.NumberFormat('en-IN', {

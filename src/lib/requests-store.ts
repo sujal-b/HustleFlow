@@ -1,50 +1,47 @@
-
+import { db, admin } from './firebase-admin'; // Import 'admin' here
 import type { ExchangeRequest, TransactionOffer } from './types';
 import type { UserDetails } from './user-store';
 
-// In-memory store for demo purposes
-let requests: ExchangeRequest[] = [];
-
-// Define a constant for the admin token
+const requestsCollection = db.collection('requests');
 const ADMIN_TOKEN = "admin_super_secret_token";
 
-export const getRequests = (): ExchangeRequest[] => {
-    // Expire requests that are older than their duration
-    const now = new Date().getTime();
-    const activeRequests = requests.filter(req => {
-        if (req.status === 'Fully Matched') return true; // Keep matched requests regardless of expiry for now
-        const createdAt = new Date(req.createdAt).getTime();
-        const durationInMs = parseInt(req.duration) * 24 * 60 * 60 * 1000;
-        return now < (createdAt + durationInMs);
-    });
-    requests = activeRequests;
+export const getRequests = async (): Promise<ExchangeRequest[]> => {
+    const snapshot = await requestsCollection
+        .orderBy('urgency', 'desc') // 'urgent' comes before 'flexible'
+        .orderBy('createdAt', 'desc') // Then newest first
+        .get();
 
-    return activeRequests.sort((a, b) => {
-        // Sort by urgency: 'urgent' comes before 'flexible'
-        if (a.urgency === 'urgent' && b.urgency === 'flexible') {
-            return -1;
+    const now = new Date().getTime();
+    const activeRequests: ExchangeRequest[] = [];
+
+    snapshot.forEach(doc => {
+        const request = doc.data() as ExchangeRequest;
+        const createdAt = new Date(request.createdAt).getTime();
+        const durationInMs = parseInt(request.duration) * 24 * 60 * 60 * 1000;
+
+        if (request.status !== 'Fully Matched' && now >= (createdAt + durationInMs)) {
+            // This is an expired request, you could optionally delete it here
+            // For now, we'll just filter it out
+        } else {
+            activeRequests.push({ ...request, id: doc.id });
         }
-        if (a.urgency === 'flexible' && b.urgency === 'urgent') {
-            return 1;
-        }
-        // If urgency is the same, sort by creation date (newest first)
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
+
+    return activeRequests;
 };
 
 type CreateRequestData = Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency' | 'offers'>;
 
-export const addRequest = (
+export const addRequest = async (
     request: CreateRequestData,
     userDetails: UserDetails,
-) => {
+): Promise<ExchangeRequest> => {
     if (!userDetails?.token) {
         throw new Error("User details not found. Cannot create request.");
     }
     
-    const newRequest: ExchangeRequest = {
+    const newRequest: Omit<ExchangeRequest, 'id'> = {
         ...request,
-        id: `req_${crypto.randomUUID()}`,
         currency: 'INR',
         status: 'Open',
         createdAt: new Date().toISOString(),
@@ -58,64 +55,67 @@ export const addRequest = (
         },
         offers: []
     }
-    requests.unshift(newRequest);
-    return newRequest;
+    
+    const docRef = await requestsCollection.add(newRequest);
+    return { ...newRequest, id: docRef.id };
 };
 
 type UpdateRequestData = Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency' | 'offers' | 'realName' | 'avatarUrl' | 'room' | 'contact' | 'token'>;
 
-export const updateRequest = (
+export const updateRequest = async (
     id: string,
     updatedData: UpdateRequestData,
     userToken: string
 ) => {
-    const requestIndex = requests.findIndex(r => r.id === id);
-    if (requestIndex === -1) {
+    const docRef = requestsCollection.doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
         throw new Error("Request not found.");
     }
-    
-    const isOwner = requests[requestIndex].user.token === userToken;
+
+    const request = doc.data() as ExchangeRequest;
+    const isOwner = request.user.token === userToken;
     const isAdmin = userToken === ADMIN_TOKEN;
 
     if (!isOwner && !isAdmin) {
         throw new Error("You are not authorized to edit this request.");
     }
 
-    requests[requestIndex] = {
-        ...requests[requestIndex],
-        ...updatedData,
-        // Ensure non-editable fields are preserved
-        createdAt: requests[requestIndex].createdAt,
-        user: requests[requestIndex].user,
-        status: requests[requestIndex].status,
-        offers: requests[requestIndex].offers,
-    };
-    return requests[requestIndex];
+    await docRef.update(updatedData);
+    return { ...request, ...updatedData, id: doc.id };
 }
 
-export const deleteRequest = (id: string, userToken: string) => {
-    const requestIndex = requests.findIndex(r => r.id === id);
-    if (requestIndex === -1) {
-        // Silently fail if not found, or throw error. Let's throw.
+export const deleteRequest = async (id: string, userToken: string) => {
+    const docRef = requestsCollection.doc(id);
+    const doc = await docRef.get();
+    if (!doc.exists) {
         throw new Error("Request not found.");
     }
     
-    const isOwner = requests[requestIndex].user.token === userToken;
+    const request = doc.data() as ExchangeRequest;
+    const isOwner = request.user.token === userToken;
     const isAdmin = userToken === ADMIN_TOKEN;
 
     if (!isOwner && !isAdmin) {
         throw new Error("You are not authorized to delete this request.");
     }
-    requests.splice(requestIndex, 1);
+    
+    await docRef.delete();
 }
 
 // --- Offer Management ---
 
-export const makeOffer = (requestId: string, offerAmount: number, userDetails: UserDetails) => {
-    const request = requests.find(r => r.id === requestId);
-    if (!request) {
+export const makeOffer = async (requestId: string, offerAmount: number, userDetails: UserDetails) => {
+    const docRef = requestsCollection.doc(requestId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
         throw new Error("Request not found.");
     }
+
+    const request = doc.data() as ExchangeRequest;
+
     if (request.user.token === userDetails.token) {
         throw new Error("You cannot make an offer on your own request.");
     }
@@ -137,49 +137,59 @@ export const makeOffer = (requestId: string, offerAmount: number, userDetails: U
             contact: userDetails.contact,
         }
     };
-    request.offers.push(newOffer);
+
+    await docRef.update({
+        offers: admin.firestore.FieldValue.arrayUnion(newOffer)
+    });
+
     return newOffer;
 }
 
-export const acceptOffer = (requestId: string, offerId: string, userToken: string) => {
-    const request = requests.find(r => r.id === requestId);
-    if (!request) {
-        throw new Error("Request not found.");
-    }
+export const acceptOffer = async (requestId: string, offerId: string, userToken: string) => {
+    const docRef = requestsCollection.doc(requestId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) throw new Error("Request not found.");
+
+    const request = doc.data() as ExchangeRequest;
+
     if (request.user.token !== userToken) {
         throw new Error("You are not authorized to accept offers for this request.");
     }
-    const offer = request.offers.find(o => o.id === offerId);
-    if (!offer) {
-        throw new Error("Offer not found.");
-    }
-
-    // Reject all other pending offers and accept this one
-    request.offers.forEach(o => {
+    
+    const updatedOffers = request.offers.map(o => {
         if (o.status === 'pending') {
-            o.status = o.id === offerId ? 'accepted' : 'rejected';
+            return o.id === offerId ? { ...o, status: 'accepted' } : { ...o, status: 'rejected' };
         }
+        return o;
     });
 
-    // Mark request as fully matched
-    request.status = 'Fully Matched';
+    await docRef.update({
+        offers: updatedOffers,
+        status: 'Fully Matched'
+    });
 }
 
-export const rejectOffer = (requestId: string, offerId: string, userToken: string) => {
-    const request = requests.find(r => r.id === requestId);
-    if (!request) {
-        throw new Error("Request not found.");
-    }
+export const rejectOffer = async (requestId: string, offerId: string, userToken: string) => {
+    const docRef = requestsCollection.doc(requestId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) throw new Error("Request not found.");
+
+    const request = doc.data() as ExchangeRequest;
+
     if (request.user.token !== userToken) {
         throw new Error("You are not authorized to reject offers for this request.");
     }
-    const offer = request.offers.find(o => o.id === offerId);
-    if (!offer) {
-        throw new Error("Offer not found.");
-    }
-    if (offer.status !== 'pending') {
-        throw new Error("This offer has already been actioned.");
+    
+    const offerToReject = request.offers.find(o => o.id === offerId);
+    if (!offerToReject || offerToReject.status !== 'pending') {
+        throw new Error("Offer not found or already actioned.");
     }
 
-    offer.status = 'rejected';
+    const updatedOffers = request.offers.map(o => 
+        o.id === offerId ? { ...o, status: 'rejected' } : o
+    );
+
+    await docRef.update({ offers: updatedOffers });
 }
