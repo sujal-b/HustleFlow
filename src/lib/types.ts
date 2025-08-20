@@ -12,6 +12,5 @@ export interface ExchangeRequest {
   user: {
     name: string;
     avatarUrl: string;
-    rating: number;
   };
 };

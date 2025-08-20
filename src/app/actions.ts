@@ -40,7 +40,7 @@ export async function createRequestAction(
         currency: newRequest.currency,
         cashOrDigital: newRequest.type,
         urgency: newRequest.urgency,
-        userPreferences: "Prefers users with high ratings and quick response times."
+        userPreferences: "Prefers users with quick response times."
     };
 
     const aiResult = await matchRequestUsers(aiInput);

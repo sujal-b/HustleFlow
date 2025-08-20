@@ -1,5 +1,11 @@
 import type { ExchangeRequest } from './types';
 
+const anonymousNames = [
+  'Panda', 'Turtle', 'Seahorse', 'Tiger', 'Lion', 'Elephant', 'Dolphin', 'Koala', 'Giraffe', 'Zebra'
+];
+
+const getRandomName = () => anonymousNames[Math.floor(Math.random() * anonymousNames.length)];
+
 // In-memory store for demo purposes
 const requests: ExchangeRequest[] = [
   {
@@ -11,9 +17,8 @@ const requests: ExchangeRequest[] = [
     status: 'Partially Matched',
     createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
     user: {
-      name: 'Alex Doe',
+      name: getRandomName(),
       avatarUrl: 'https://placehold.co/150x150.png',
-      rating: 4.8,
     },
   },
   {
@@ -25,9 +30,8 @@ const requests: ExchangeRequest[] = [
     status: 'Open',
     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
     user: {
-      name: 'Samantha Bee',
+      name: getRandomName(),
       avatarUrl: 'https://placehold.co/150x150.png',
-      rating: 4.9,
     },
   },
   {
@@ -39,9 +43,8 @@ const requests: ExchangeRequest[] = [
     status: 'Fully Matched',
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
     user: {
-      name: 'John Smith',
+      name: getRandomName(),
       avatarUrl: 'https://placehold.co/150x150.png',
-      rating: 4.5,
     },
   },
     {
@@ -53,9 +56,8 @@ const requests: ExchangeRequest[] = [
     status: 'Open',
     createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     user: {
-      name: 'Yuki Tanaka',
+      name: getRandomName(),
       avatarUrl: 'https://placehold.co/150x150.png',
-      rating: 5.0,
     },
   },
 ];
@@ -72,9 +74,8 @@ export const addRequest = (request: Omit<ExchangeRequest, 'id' | 'createdAt' | '
         status: 'Open',
         createdAt: new Date().toISOString(),
         user: {
-            name: 'Jane Doe', // Current user placeholder
+            name: getRandomName(), // Assign a random anonymous name
             avatarUrl: 'https://placehold.co/150x150.png',
-            rating: 4.7
         }
     }
     requests.unshift(newRequest);

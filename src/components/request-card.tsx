@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Banknote, Clock, Star, Wallet } from 'lucide-react';
+import { Banknote, Clock, Wallet } from 'lucide-react';
 import { TransactionDialog } from './transaction-dialog';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
@@ -46,7 +46,6 @@ export function RequestCard({ request }: RequestCardProps) {
           <CardTitle className="font-headline text-xl">{currencyFormatter.format(request.amount)}</CardTitle>
           <CardDescription className="flex items-center gap-2">
             <span>by {request.user.name}</span>
-            <span className="flex items-center gap-0.5"><Star className="w-3 h-3 text-yellow-400 fill-yellow-500" /> {request.user.rating}</span>
           </CardDescription>
         </div>
         <Badge variant="outline" className={cn("capitalize", statusColors[request.status])}>
