@@ -26,7 +26,7 @@ const ADMIN_TOKEN = "admin_super_secret_token";
 export default function AdminPage() {
     const [user, setUser] = useState<UserDetails | null>(null);
     const [requests, setRequests] = useState<ExchangeRequest[]>([]);
-    const [todaysUsers, setTodaysUsers] = useState<UserInfo[]>([]);
+    const [allUsers, setAllUsers] = useState<UserInfo[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -39,27 +39,20 @@ export default function AdminPage() {
             const allRequests = getRequests();
             setRequests(allRequests);
 
-            // --- Logic for Today's Users ---
+            // --- Logic for All Users ---
             const uniqueUsers = new Map<string, UserInfo>();
-            const twentyFourHoursAgo = new Date().getTime() - (24 * 60 * 60 * 1000);
-
+            
             allRequests.forEach(request => {
-                const requestCreatedAt = new Date(request.createdAt).getTime();
-                if (requestCreatedAt >= twentyFourHoursAgo) {
-                    if (!uniqueUsers.has(request.user.token)) {
-                        uniqueUsers.set(request.user.token, request.user);
-                    }
+                if (!uniqueUsers.has(request.user.token)) {
+                    uniqueUsers.set(request.user.token, request.user);
                 }
                 request.offers.forEach(offer => {
-                     const offerCreatedAt = new Date(offer.createdAt).getTime();
-                     if(offerCreatedAt >= twentyFourHoursAgo) {
-                        if (!uniqueUsers.has(offer.user.token)) {
-                            uniqueUsers.set(offer.user.token, offer.user);
-                        }
-                     }
+                    if (!uniqueUsers.has(offer.user.token)) {
+                        uniqueUsers.set(offer.user.token, offer.user);
+                    }
                 });
             });
-            setTodaysUsers(Array.from(uniqueUsers.values()));
+            setAllUsers(Array.from(uniqueUsers.values()));
         }
         setLoading(false);
     }, []);
@@ -98,7 +91,7 @@ export default function AdminPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Users className="w-6 h-6" />
-                        Today's Users ({todaysUsers.length})
+                        All Users ({allUsers.length})
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -113,14 +106,14 @@ export default function AdminPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                 {todaysUsers.length === 0 && (
+                                 {allUsers.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={4} className="h-24 text-center">
-                                            No new users today.
+                                            No users have made requests or offers yet.
                                         </TableCell>
                                     </TableRow>
                                 )}
-                                {todaysUsers.map(u => (
+                                {allUsers.map(u => (
                                     <TableRow key={u.token}>
                                         <TableCell className="font-medium">{u.realName}</TableCell>
                                         <TableCell>{u.name}</TableCell>
