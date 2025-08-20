@@ -1,6 +1,11 @@
 
+"use client";
+
+import { useEffect, useState } from "react";
 import { getRequests } from "@/lib/requests-store";
 import { getUserDetails } from "@/lib/user-store";
+import type { UserDetails } from "@/lib/user-store";
+import type { ExchangeRequest } from "@/lib/types";
 import {
     Table,
     TableBody,
@@ -13,29 +18,43 @@ import { Badge } from "@/components/ui/badge";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-
-export const dynamic = 'force-dynamic';
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 const ADMIN_TOKEN = "admin_super_secret_token";
 
 export default function AdminPage() {
-    const user = getUserDetails();
+    const [user, setUser] = useState<UserDetails | null>(null);
+    const [requests, setRequests] = useState<ExchangeRequest[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    if (user?.token !== ADMIN_TOKEN) {
-        // In a real app, you might redirect to a login page
-        // For now, we'll just show an access denied message, but redirecting is better.
-        redirect('/');
-    }
+    useEffect(() => {
+        const userDetails = getUserDetails();
+        setUser(userDetails);
 
-    const requests = getRequests();
-    
+        if (userDetails?.token !== ADMIN_TOKEN) {
+            redirect('/');
+        } else {
+            // Fetch requests only if the user is an admin
+            const allRequests = getRequests();
+            setRequests(allRequests);
+        }
+        setLoading(false);
+    }, []);
+
     const currencyFormatter = new Intl.NumberFormat('en-IN', {
         style: 'currency',
         currency: 'INR',
         maximumFractionDigits: 0,
         minimumFractionDigits: 0,
     });
+
+    if (loading) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="p-4 sm:p-6 md:p-8">

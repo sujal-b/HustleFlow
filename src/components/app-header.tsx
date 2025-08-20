@@ -17,6 +17,7 @@ export function AppHeader({ setRequestSheetOpen }: AppHeaderProps) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    // This check must run on the client after hydration
     const user = getUserDetails();
     if (user && user.token === ADMIN_TOKEN) {
       setIsAdmin(true);
