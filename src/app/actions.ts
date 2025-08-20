@@ -6,8 +6,17 @@ import * as z from "zod";
 import { addRequest, updateRequest, deleteRequest } from "@/lib/requests-store";
 import type { UserDetails } from "@/lib/user-store";
 
-const requestFormSchema = z.object({
-  id: z.string().optional(),
+// Schema for creating a request (no ID)
+const createRequestFormSchema = z.object({
+  amount: z.coerce.number(),
+  type: z.enum(["cash", "digital"]),
+  urgency: z.enum(["urgent", "flexible"]),
+  duration: z.enum(["1", "3", "7"]),
+});
+
+// Schema for updating a request (requires ID)
+const updateRequestFormSchema = z.object({
+  id: z.string(),
   amount: z.coerce.number(),
   type: z.enum(["cash", "digital"]),
   urgency: z.enum(["urgent", "flexible"]),
@@ -29,11 +38,40 @@ type ActionResponse = {
   reasoning?: string;
 };
 
-export async function createOrUpdateRequestAction(
-  data: z.infer<typeof requestFormSchema>,
+export async function createRequestAction(
+  data: z.infer<typeof createRequestFormSchema>,
   userDetails: UserDetails | null,
 ): Promise<ActionResponse> {
-  const validation = requestFormSchema.safeParse(data);
+  const validation = createRequestFormSchema.safeParse(data);
+  if (!validation.success) {
+    console.error("Form validation failed:", validation.error);
+    return { success: false, error: "Invalid form data provided." };
+  }
+  
+  const userValidation = userDetailsSchema.safeParse(userDetails);
+   if (!userValidation.success || !userDetails) {
+    console.error("User details validation failed:", userValidation.error);
+    return { success: false, error: "Invalid user details provided." };
+  }
+
+  try {
+    addRequest(validation.data, userDetails);
+    revalidatePath("/");
+    return { success: true, reasoning: `Your request has been successfully created.` };
+  } catch (error) {
+    console.error(`Error creating request:`, error);
+    if (error instanceof Error) {
+        return { success: false, error: error.message };
+    }
+    return { success: false, error: "An unexpected error occurred. Please try again." };
+  }
+}
+
+export async function updateRequestAction(
+  data: z.infer<typeof updateRequestFormSchema>,
+  userDetails: UserDetails | null,
+): Promise<ActionResponse> {
+  const validation = updateRequestFormSchema.safeParse(data);
   if (!validation.success) {
     console.error("Form validation failed:", validation.error);
     return { success: false, error: "Invalid form data provided." };
@@ -48,19 +86,11 @@ export async function createOrUpdateRequestAction(
   const { id, ...requestData } = validation.data;
 
   try {
-    if (id) {
-      // Update existing request
-      updateRequest(id, requestData, userDetails.token);
-    } else {
-      // Create new request
-      addRequest(requestData, userDetails);
-    }
-
+    updateRequest(id, requestData, userDetails.token);
     revalidatePath("/");
-    return { success: true, reasoning: `Your request has been successfully ${id ? 'updated' : 'created'}.` };
-
+    return { success: true, reasoning: `Your request has been successfully updated.` };
   } catch (error) {
-    console.error(`Error ${id ? 'updating' : 'creating'} request:`, error);
+    console.error(`Error updating request:`, error);
     if (error instanceof Error) {
         return { success: false, error: error.message };
     }

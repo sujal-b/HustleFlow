@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { createOrUpdateRequestAction } from "@/app/actions";
+import { createRequestAction, updateRequestAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { getUserDetails } from "@/lib/user-store";
 import type { ExchangeRequest } from "@/lib/types";
 
-const requestFormSchema = z.object({
+const formSchema = z.object({
   id: z.string().optional(),
   amount: z.coerce
     .number({ invalid_type_error: "Please enter a valid number." })
@@ -38,7 +38,7 @@ const requestFormSchema = z.object({
   duration: z.enum(["1", "3", "7"]),
 });
 
-type RequestFormValues = z.infer<typeof requestFormSchema>;
+type RequestFormValues = z.infer<typeof formSchema>;
 
 interface RequestFormProps {
   setSheetOpen: Dispatch<SetStateAction<boolean>>;
@@ -54,7 +54,7 @@ export function RequestForm({ setSheetOpen, request }: RequestFormProps) {
   const isEditMode = !!request;
 
   const form = useForm<RequestFormValues>({
-    resolver: zodResolver(requestFormSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: isEditMode ? {
       id: request.id,
       amount: request.amount,
@@ -72,7 +72,10 @@ export function RequestForm({ setSheetOpen, request }: RequestFormProps) {
   const onSubmit = (data: RequestFormValues) => {
     startTransition(async () => {
       const userDetails = getUserDetails();
-      const result = await createOrUpdateRequestAction(data, userDetails);
+      const result = isEditMode
+        ? await updateRequestAction(data as Required<RequestFormValues>, userDetails)
+        : await createRequestAction(data, userDetails);
+        
       if (result.success) {
         if (!isEditMode) {
           setShowConfetti(true);
