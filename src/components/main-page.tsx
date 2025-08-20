@@ -2,7 +2,7 @@
 "use client";
 
 import type { ExchangeRequest } from "@/lib/types";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { AppHeader } from "@/components/app-header";
 import { RequestDialog } from "@/components/request-dialog";
 import { RequestCard } from "./request-card";
@@ -33,24 +33,41 @@ export function MainPage({ requests }: { requests: ExchangeRequest[] }) {
     setUserDetailsDialogOpen(false);
   };
 
-  const myRequests = currentUser ? requests.filter(r => r.user.token === currentUser.token) : [];
-  const myOffersOnRequests = currentUser ? requests.filter(r => r.offers.some(o => o.user.token === currentUser.token)) : [];
+  const { myActivityRequests, otherRequests } = useMemo(() => {
+    if (!currentUser) {
+      return { myActivityRequests: [], otherRequests: requests };
+    }
+    
+    const myActivity = new Set<string>();
+    const myRequests = requests.filter(r => {
+      const isMine = r.user.token === currentUser.token;
+      if (isMine) myActivity.add(r.id);
+      return isMine;
+    });
+
+    const myOffersOnRequests = requests.filter(r => {
+      const hasMyOffer = r.offers.some(o => o.user.token === currentUser.token);
+       if (hasMyOffer) myActivity.add(r.id);
+      return hasMyOffer;
+    });
+
+    // Combine and remove duplicates
+    const combinedActivity = [...myRequests, ...myOffersOnRequests];
+    const uniqueMyActivityRequests = combinedActivity.filter((request, index, self) =>
+        index === self.findIndex((r) => r.id === request.id)
+    );
+
+    const otherRequests = requests.filter(r => !myActivity.has(r.id));
+
+    return { myActivityRequests: uniqueMyActivityRequests, otherRequests };
+
+  }, [requests, currentUser]);
   
-  // Combine and remove duplicates
-  const myActivityRequests = [...myRequests, ...myOffersOnRequests];
-  const uniqueMyActivityRequests = myActivityRequests.filter((request, index, self) =>
-    index === self.findIndex((r) => (
-      r.id === request.id
-    ))
-  );
+  const filteredRequests = useMemo(() => {
+     if (filter === 'all') return otherRequests;
+     return otherRequests.filter(request => request.type === filter);
+  }, [filter, otherRequests]);
 
-  const filteredRequests = requests.filter(request => {
-    // Exclude user's own activity from the main list
-    if (uniqueMyActivityRequests.some(r => r.id === request.id)) return false;
-
-    if (filter === 'all') return true;
-    return request.type === filter;
-  });
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -58,14 +75,14 @@ export function MainPage({ requests }: { requests: ExchangeRequest[] }) {
       <main className="flex-1 p-4 sm:p-6 md:p-8">
         <div className="mx-auto max-w-5xl">
           
-          {uniqueMyActivityRequests.length > 0 && (
+          {myActivityRequests.length > 0 && (
              <div className="mb-12">
                 <div className="mb-6">
                     <h2 className="font-headline text-3xl font-bold tracking-tight">My Activity</h2>
                     <p className="text-muted-foreground">Requests you've created or made offers on.</p>
                 </div>
                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {uniqueMyActivityRequests.map((request) => (
+                    {myActivityRequests.map((request) => (
                         <RequestCard key={request.id} request={request} />
                     ))}
                 </div>
