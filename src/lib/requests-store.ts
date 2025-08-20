@@ -6,7 +6,15 @@ import type { UserDetails } from './user-store';
 const requests: ExchangeRequest[] = [];
 
 export const getRequests = (): ExchangeRequest[] => {
-    return requests.sort((a, b) => {
+    // Expire requests that are older than their duration
+    const now = new Date().getTime();
+    const activeRequests = requests.filter(req => {
+        const createdAt = new Date(req.createdAt).getTime();
+        const durationInMs = parseInt(req.duration) * 24 * 60 * 60 * 1000;
+        return now < (createdAt + durationInMs);
+    });
+
+    return activeRequests.sort((a, b) => {
         // Sort by urgency: 'urgent' comes before 'flexible'
         if (a.urgency === 'urgent' && b.urgency === 'flexible') {
             return -1;
@@ -21,9 +29,9 @@ export const getRequests = (): ExchangeRequest[] => {
 
 export const addRequest = (
     request: Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency'>,
-    userDetails: UserDetails,
+    userDetails: UserDetails | null,
 ) => {
-    if (!userDetails?.name) {
+    if (!userDetails?.name || !userDetails.anonymousName) {
         throw new Error("User details not found. Cannot create request.");
     }
     
@@ -34,11 +42,12 @@ export const addRequest = (
         status: 'Open',
         createdAt: new Date().toISOString(),
         user: {
-            name: userDetails.name,
-            avatarUrl: `https://placehold.co/150x150.png?text=${userDetails.name.charAt(0)}`,
+            token: userDetails.token,
+            name: userDetails.anonymousName, // Use anonymous name for public display
+            realName: userDetails.name, // Store real name for confirmed transactions
+            avatarUrl: `https://placehold.co/150x150.png?text=${userDetails.anonymousName.charAt(0)}`,
             room: userDetails.room,
             contact: userDetails.contact,
-            token: userDetails.token,
         }
     }
     requests.unshift(newRequest);

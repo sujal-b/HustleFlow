@@ -10,10 +10,18 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Banknote, Clock, Wallet } from 'lucide-react';
+import { Banknote, Clock, Wallet, MoreVertical, Edit, Trash2, Bell } from 'lucide-react';
 import { TransactionDialog } from './transaction-dialog';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
+import { getUserDetails } from '@/lib/user-store';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useState, useEffect } from 'react';
 
 interface RequestCardProps {
   request: ExchangeRequest;
@@ -26,7 +34,15 @@ const statusColors: Record<ExchangeRequest['status'], string> = {
 }
 
 export function RequestCard({ request }: RequestCardProps) {
+  const [isOwner, setIsOwner] = useState(false);
   const timeAgo = formatDistanceToNow(new Date(request.createdAt), { addSuffix: true });
+
+  useEffect(() => {
+    const currentUser = getUserDetails();
+    if (currentUser && currentUser.token === request.user.token) {
+      setIsOwner(true);
+    }
+  }, [request.user.token]);
 
   const currencyFormatter = new Intl.NumberFormat('en-IN', {
     style: 'currency',
@@ -39,18 +55,39 @@ export function RequestCard({ request }: RequestCardProps) {
     <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300 bg-card hover:bg-card/90">
       <CardHeader className="flex-row items-start gap-4 pb-4">
         <Avatar className="h-12 w-12 border-2 border-primary/20">
-          <AvatarImage src={request.user.avatarUrl} alt={request.user.name} data-ai-hint="person portrait" />
+          <AvatarImage src={request.user.avatarUrl} alt={request.user.name} data-ai-hint="person abstract" />
           <AvatarFallback>{request.user.name.charAt(0)}</AvatarFallback>
         </Avatar>
         <div className="flex-1">
           <CardTitle className="font-headline text-xl">{currencyFormatter.format(request.amount)}</CardTitle>
           <CardDescription className="flex items-center gap-2">
-            <span>by {request.user.name}</span>
+            <span>by User {request.user.name}</span>
           </CardDescription>
         </div>
-        <Badge variant="outline" className={cn("capitalize", statusColors[request.status])}>
-            {request.status}
-        </Badge>
+        <div className="flex items-center gap-2">
+            <Badge variant="outline" className={cn("capitalize", statusColors[request.status])}>
+                {request.status}
+            </Badge>
+            {isOwner && (
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => alert("Edit functionality to be implemented.")}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Edit</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => alert("Delete functionality to be implemented.")} className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>Delete</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
+        </div>
       </CardHeader>
       <CardContent className="flex-grow space-y-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">

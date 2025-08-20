@@ -12,7 +12,8 @@ export interface ExchangeRequest {
   createdAt: string; // ISO string
   user: {
     token: string;
-    name: string;
+    name: string; // This will be the anonymous name for public display
+    realName: string; // This is the actual user name, hidden until confirmed
     avatarUrl: string;
     room: string;
     contact?: string;

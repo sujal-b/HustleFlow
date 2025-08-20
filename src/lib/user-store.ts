@@ -3,9 +3,15 @@
 
 const TOKEN_KEY = 'hustleflow_token';
 
-interface UserDetails {
+const ANONYMOUS_NAMES = [
+    'Panda', 'Turtle', 'Seahorse', 'Squirrel', 'Koala', 'Dolphin', 
+    'Penguin', 'Otter', 'Quokka', 'Meerkat', 'Hedgehog', 'Alpaca'
+];
+
+export interface UserDetails {
     token: string;
-    name: string;
+    name: string; // Real name
+    anonymousName: string; // Anonymous name
     room: string;
     contact?: string;
     expiresAt: number;
@@ -13,6 +19,10 @@ interface UserDetails {
 
 function generateToken(): string {
     return "hstl_" + Math.random().toString(36).substring(2, 6);
+}
+
+function getRandomAnonymousName(): string {
+    return ANONYMOUS_NAMES[Math.floor(Math.random() * ANONYMOUS_NAMES.length)];
 }
 
 function getTokenWithExpiry(): UserDetails | null {
@@ -46,13 +56,14 @@ export function saveUserDetails(details: { name: string; room: string; contact?:
     const now = new Date();
     const expiresAt = now.getTime() + 24 * 60 * 60 * 1000; // 24 hours
     
-    let token = getTokenWithExpiry()?.token;
-    if (!token) {
-        token = generateToken();
-    }
+    let existingDetails = getTokenWithExpiry();
+    
+    const token = existingDetails?.token || generateToken();
+    const anonymousName = existingDetails?.anonymousName || getRandomAnonymousName();
 
     const userDetails: UserDetails = {
         token,
+        anonymousName,
         ...details,
         expiresAt,
     };

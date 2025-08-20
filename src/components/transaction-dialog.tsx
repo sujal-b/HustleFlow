@@ -15,7 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "./ui/button";
-import { CheckCircle2, Lock, Star, Phone, Home, User } from "lucide-react";
+import { CheckCircle2, Lock, Star, Phone, Home, User, Bell } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 
 interface TransactionDialogProps {
@@ -46,7 +46,7 @@ export function TransactionDialog({ request, children }: TransactionDialogProps)
           <AlertDialogDescription>
             {isConfirmed
               ? "Your transaction is confirmed. You can now contact the user."
-              : `You are about to start a transaction for ${request.amount} ${request.currency} with user ${request.user.token}.`}
+              : `You are about to start a transaction with User ${request.user.name}.`}
           </AlertDialogDescription>
         </AlertDialogHeader>
         
@@ -68,15 +68,19 @@ export function TransactionDialog({ request, children }: TransactionDialogProps)
                         <div className="pt-2">
                              <p className="font-semibold text-sm text-muted-foreground mb-2">Contact Info:</p>
                              <div className="space-y-2">
-                                <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary"/>{request.user.name}</p>
+                                <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary"/>{request.user.realName}</p>
                                 <p className="flex items-center gap-2"><Home className="w-4 h-4 text-primary"/>{request.user.room}</p>
                                 {request.user.contact && <p className="flex items-center gap-2"><Phone className="w-4 h-4 text-primary"/>{request.user.contact}</p>}
                              </div>
                         </div>
                     </div>
+                    <Button variant="outline" onClick={() => alert("Notification functionality to be implemented.")}>
+                        <Bell className="w-4 h-4 mr-2" />
+                        Notify User
+                    </Button>
                      <div className="space-y-2">
                         <h4 className="font-semibold">Leave Anonymous Feedback</h4>
-                        <Textarea placeholder={`How was your exchange with ${request.user.name}?`} />
+                        <Textarea placeholder={`How was your exchange with User ${request.user.name}?`} />
                      </div>
                     </>
                 )}

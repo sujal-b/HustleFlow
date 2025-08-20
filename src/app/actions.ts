@@ -13,9 +13,11 @@ const requestFormSchema = z.object({
   duration: z.enum(["1", "3", "7"]),
 });
 
+// The userDetails object coming from the client will have all the fields from the UserDetails type
 const userDetailsSchema = z.object({
     token: z.string(),
     name: z.string(),
+    anonymousName: z.string(),
     room: z.string(),
     contact: z.string().optional(),
     expiresAt: z.number(),
@@ -55,10 +57,13 @@ export async function createRequestAction(
     }, userDetails);
 
     revalidatePath("/");
-    return { success: true, reasoning: "Your request has been successfully created and is now visible to others. You will be notified when a match is found." };
+    return { success: true, reasoning: "Your request has been successfully created and is now visible to others." };
 
   } catch (error) {
     console.error("Error creating request:", error);
+    if (error instanceof Error) {
+        return { success: false, error: error.message };
+    }
     return { success: false, error: "An unexpected error occurred. Please try again." };
   }
 }
