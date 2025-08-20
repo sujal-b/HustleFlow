@@ -24,6 +24,7 @@ export async function createRequestAction(
 ): Promise<ActionResponse> {
   const validation = requestFormSchema.safeParse(data);
   if (!validation.success) {
+    console.error("Form validation failed:", validation.error);
     return { success: false, error: "Invalid form data provided." };
   }
   
