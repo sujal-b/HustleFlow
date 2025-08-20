@@ -3,7 +3,7 @@
 import type { ExchangeRequest } from "@/lib/types";
 import { useState } from "react";
 import { AppHeader } from "@/components/app-header";
-import { RequestSheet } from "@/components/request-sheet";
+import { RequestDialog } from "@/components/request-dialog";
 import { RequestCard } from "./request-card";
 import { Button } from "./ui/button";
 
@@ -39,7 +39,7 @@ export function MainPage({ requests }: { requests: ExchangeRequest[] }) {
           )}
         </div>
       </main>
-      <RequestSheet open={requestSheetOpen} setOpen={setRequestSheetOpen} />
+      <RequestDialog open={requestSheetOpen} setOpen={setRequestSheetOpen} />
     </div>
   );
 }
