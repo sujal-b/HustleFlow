@@ -52,8 +52,11 @@ const statusColors: Record<ExchangeRequest['status'], string> = {
     "Fully Matched": "bg-green-900/50 text-green-300 border-green-300/50",
 }
 
+// This should be in an environment variable in a real app
+const ADMIN_TOKEN = process.env.NEXT_PUBLIC_ADMIN_TOKEN;
+
 export function RequestCard({ request }: RequestCardProps) {
-  const [isOwner, setIsOwner] = useState(false);
+  const [canManage, setCanManage] = useState(false);
   const [isEditSheetOpen, setEditSheetOpen] = useState(false);
   const [isDeleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -64,8 +67,11 @@ export function RequestCard({ request }: RequestCardProps) {
 
   useEffect(() => {
     const currentUser = getUserDetails();
-    if (currentUser && currentUser.token === request.user.token) {
-      setIsOwner(true);
+    if (currentUser) {
+        const isOwner = currentUser.token === request.user.token;
+        // In a real app, the admin token should be handled more securely
+        const isAdmin = currentUser.token === "admin_super_secret_token";
+        setCanManage(isOwner || isAdmin);
     }
   }, [request.user.token]);
 
@@ -116,7 +122,7 @@ export function RequestCard({ request }: RequestCardProps) {
                 <Badge variant="outline" className={cn("capitalize", statusColors[request.status])}>
                     {request.status}
                 </Badge>
-                {isOwner && (
+                {canManage && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
