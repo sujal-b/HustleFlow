@@ -11,7 +11,10 @@ export interface ExchangeRequest {
   status: 'Open' | 'Partially Matched' | 'Fully Matched';
   createdAt: string; // ISO string
   user: {
+    token: string;
     name: string;
     avatarUrl: string;
+    room: string;
+    contact?: string;
   };
 };

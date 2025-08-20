@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ExchangeRequest } from "@/lib/types";
@@ -14,7 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "./ui/button";
-import { CheckCircle2, Lock, Star } from "lucide-react";
+import { CheckCircle2, Lock, Star, Phone, Home, User } from "lucide-react";
 import { Textarea } from "./ui/textarea";
 
 interface TransactionDialogProps {
@@ -45,7 +46,7 @@ export function TransactionDialog({ request, children }: TransactionDialogProps)
           <AlertDialogDescription>
             {isConfirmed
               ? "Your transaction is confirmed. You can now contact the user."
-              : `You are about to start a transaction for ${request.amount} ${request.currency} with ${request.user.name}.`}
+              : `You are about to start a transaction for ${request.amount} ${request.currency} with user ${request.user.token}.`}
           </AlertDialogDescription>
         </AlertDialogHeader>
         
@@ -59,11 +60,19 @@ export function TransactionDialog({ request, children }: TransactionDialogProps)
                     </div>
                 ) : (
                     <>
-                    <div className="rounded-lg border p-4 space-y-2">
-                        <p className="font-semibold">Transaction ID:</p>
-                        <p className="text-sm font-mono bg-muted p-2 rounded-md">{request.id}</p>
-                        <p className="font-semibold pt-2">Contact Info:</p>
-                        <p className="text-sm">Email: {request.user.name.replace(/\s+/g, '.').toLowerCase()}@email.com</p>
+                    <div className="rounded-lg border p-4 space-y-3">
+                        <div>
+                            <p className="font-semibold text-sm text-muted-foreground">Transaction ID:</p>
+                            <p className="font-mono bg-muted p-2 rounded-md text-sm">{request.id}</p>
+                        </div>
+                        <div className="pt-2">
+                             <p className="font-semibold text-sm text-muted-foreground mb-2">Contact Info:</p>
+                             <div className="space-y-2">
+                                <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary"/>{request.user.name}</p>
+                                <p className="flex items-center gap-2"><Home className="w-4 h-4 text-primary"/>{request.user.room}</p>
+                                {request.user.contact && <p className="flex items-center gap-2"><Phone className="w-4 h-4 text-primary"/>{request.user.contact}</p>}
+                             </div>
+                        </div>
                     </div>
                      <div className="space-y-2">
                         <h4 className="font-semibold">Leave Anonymous Feedback</h4>
@@ -75,7 +84,7 @@ export function TransactionDialog({ request, children }: TransactionDialogProps)
         ) : (
             <div className="flex flex-col items-center justify-center text-center p-8 bg-secondary rounded-lg">
                 <Lock className="w-16 h-16 text-primary/80 mb-4"/>
-                <p className="text-muted-foreground max-w-xs">Contact details and a secure chat room will be unlocked upon confirmation from both parties.</p>
+                <p className="text-muted-foreground max-w-xs">Real user details are hidden for privacy. Contact info and a secure chat room will be unlocked upon confirmation from all parties.</p>
             </div>
         )}
 

@@ -1,11 +1,6 @@
 
 import type { ExchangeRequest } from './types';
-
-const anonymousNames = [
-  'Panda', 'Turtle', 'Seahorse', 'Tiger', 'Lion', 'Elephant', 'Dolphin', 'Koala', 'Giraffe', 'Zebra'
-];
-
-const getRandomName = () => anonymousNames[Math.floor(Math.random() * anonymousNames.length)];
+import { getUserDetails } from './user-store';
 
 // In-memory store for demo purposes
 const requests: ExchangeRequest[] = [];
@@ -25,6 +20,11 @@ export const getRequests = (): ExchangeRequest[] => {
 };
 
 export const addRequest = (request: Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency'>) => {
+    const userDetails = getUserDetails();
+    if (!userDetails?.name) {
+        throw new Error("User details not found. Cannot create request.");
+    }
+    
     const newRequest: ExchangeRequest = {
         ...request,
         id: `req_${crypto.randomUUID()}`,
@@ -32,8 +32,11 @@ export const addRequest = (request: Omit<ExchangeRequest, 'id' | 'createdAt' | '
         status: 'Open',
         createdAt: new Date().toISOString(),
         user: {
-            name: getRandomName(), // Assign a random anonymous name
-            avatarUrl: 'https://placehold.co/150x150.png',
+            name: userDetails.name,
+            avatarUrl: `https://placehold.co/150x150.png?text=${userDetails.name.charAt(0)}`,
+            room: userDetails.room,
+            contact: userDetails.contact,
+            token: userDetails.token,
         }
     }
     requests.unshift(newRequest);

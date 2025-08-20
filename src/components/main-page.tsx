@@ -1,16 +1,42 @@
+
 "use client";
 
 import type { ExchangeRequest } from "@/lib/types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppHeader } from "@/components/app-header";
 import { RequestDialog } from "@/components/request-dialog";
 import { RequestCard } from "./request-card";
 import { Button } from "./ui/button";
 import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
+import { UserDetailsDialog } from "./user-details-dialog";
+import { getUserDetails } from "@/lib/user-store";
 
 export function MainPage({ requests }: { requests: ExchangeRequest[] }) {
   const [requestSheetOpen, setRequestSheetOpen] = useState(false);
+  const [userDetailsDialogOpen, setUserDetailsDialogOpen] = useState(false);
+  const [isUserDetailsSet, setIsUserDetailsSet] = useState(false);
   const [filter, setFilter] = useState<'all' | 'cash' | 'digital'>('all');
+
+  useEffect(() => {
+    // This check runs on the client after hydration
+    if (getUserDetails()?.name) {
+      setIsUserDetailsSet(true);
+    }
+  }, []);
+
+  const handleNewRequestClick = () => {
+    if (isUserDetailsSet) {
+      setRequestSheetOpen(true);
+    } else {
+      setUserDetailsDialogOpen(true);
+    }
+  };
+
+  const onUserDetailsSave = () => {
+    setIsUserDetailsSet(true);
+    setUserDetailsDialogOpen(false);
+    setRequestSheetOpen(true); // Open request dialog after saving details
+  };
 
   const filteredRequests = requests.filter(request => {
     if (filter === 'all') return true;
@@ -19,7 +45,7 @@ export function MainPage({ requests }: { requests: ExchangeRequest[] }) {
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <AppHeader setRequestSheetOpen={setRequestSheetOpen} />
+      <AppHeader setRequestSheetOpen={handleNewRequestClick} />
       <main className="flex-1 p-4 sm:p-6 md:p-8">
         <div className="mx-auto max-w-5xl">
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -60,7 +86,7 @@ export function MainPage({ requests }: { requests: ExchangeRequest[] }) {
                   }
                 </p>
                 <Button 
-                  onClick={() => setRequestSheetOpen(true)}
+                  onClick={handleNewRequestClick}
                   className="mt-4"
                 >
                   Create Request
@@ -70,6 +96,11 @@ export function MainPage({ requests }: { requests: ExchangeRequest[] }) {
         </div>
       </main>
       <RequestDialog open={requestSheetOpen} setOpen={setRequestSheetOpen} />
+      <UserDetailsDialog 
+        open={userDetailsDialogOpen} 
+        setOpen={setUserDetailsDialogOpen} 
+        onSave={onUserDetailsSave}
+      />
     </div>
   );
 }

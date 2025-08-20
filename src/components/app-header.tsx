@@ -1,11 +1,11 @@
+
 "use client";
 
-import type { Dispatch, SetStateAction } from 'react';
 import { ArrowRightLeft, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface AppHeaderProps {
-  setRequestSheetOpen: Dispatch<SetStateAction<boolean>>;
+  setRequestSheetOpen: (isOpen: boolean) => void;
 }
 
 export function AppHeader({ setRequestSheetOpen }: AppHeaderProps) {
