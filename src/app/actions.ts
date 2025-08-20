@@ -3,17 +3,17 @@
 
 import { revalidatePath } from "next/cache";
 import * as z from "zod";
-import { addRequest } from "@/lib/requests-store";
+import { addRequest, updateRequest, deleteRequest } from "@/lib/requests-store";
 import type { UserDetails } from "@/lib/user-store";
 
 const requestFormSchema = z.object({
+  id: z.string().optional(),
   amount: z.coerce.number(),
   type: z.enum(["cash", "digital"]),
   urgency: z.enum(["urgent", "flexible"]),
   duration: z.enum(["1", "3", "7"]),
 });
 
-// The userDetails object coming from the client will have all the fields from the UserDetails type
 const userDetailsSchema = z.object({
     token: z.string(),
     name: z.string(),
@@ -23,14 +23,13 @@ const userDetailsSchema = z.object({
     expiresAt: z.number(),
 });
 
-
 type ActionResponse = {
   success: boolean;
   error?: string;
   reasoning?: string;
 };
 
-export async function createRequestAction(
+export async function createOrUpdateRequestAction(
   data: z.infer<typeof requestFormSchema>,
   userDetails: UserDetails | null,
 ): Promise<ActionResponse> {
@@ -46,24 +45,51 @@ export async function createRequestAction(
     return { success: false, error: "Invalid user details provided." };
   }
 
-  const { amount, type, urgency, duration } = validation.data;
+  const { id, ...requestData } = validation.data;
 
   try {
-    addRequest({
-        amount,
-        type,
-        urgency,
-        duration
-    }, userDetails);
+    if (id) {
+      // Update existing request
+      updateRequest(id, requestData, userDetails.token);
+    } else {
+      // Create new request
+      addRequest(requestData, userDetails);
+    }
 
     revalidatePath("/");
-    return { success: true, reasoning: "Your request has been successfully created and is now visible to others." };
+    return { success: true, reasoning: `Your request has been successfully ${id ? 'updated' : 'created'}.` };
 
   } catch (error) {
-    console.error("Error creating request:", error);
+    console.error(`Error ${id ? 'updating' : 'creating'} request:`, error);
     if (error instanceof Error) {
         return { success: false, error: error.message };
     }
     return { success: false, error: "An unexpected error occurred. Please try again." };
   }
+}
+
+export async function deleteRequestAction(
+    requestId: string,
+    userDetails: UserDetails | null
+): Promise<ActionResponse> {
+    if (!requestId) {
+        return { success: false, error: "Request ID is required." };
+    }
+
+    const userValidation = userDetailsSchema.safeParse(userDetails);
+    if (!userValidation.success || !userDetails) {
+        return { success: false, error: "Invalid user details provided." };
+    }
+
+    try {
+        deleteRequest(requestId, userDetails.token);
+        revalidatePath("/");
+        return { success: true, reasoning: "Your request has been deleted." };
+    } catch (error) {
+        console.error("Error deleting request:", error);
+        if (error instanceof Error) {
+            return { success: false, error: error.message };
+        }
+        return { success: false, error: "An unexpected error occurred. Please try again." };
+    }
 }

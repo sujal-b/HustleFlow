@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { createRequestAction } from "@/app/actions";
+import { createOrUpdateRequestAction } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,8 +25,10 @@ import { Loader2 } from "lucide-react";
 import { Confetti } from "./confetti";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { getUserDetails } from "@/lib/user-store";
+import type { ExchangeRequest } from "@/lib/types";
 
 const requestFormSchema = z.object({
+  id: z.string().optional(),
   amount: z.coerce
     .number({ invalid_type_error: "Please enter a valid number." })
     .min(1, { message: "Amount must be at least 1." })
@@ -40,17 +42,26 @@ type RequestFormValues = z.infer<typeof requestFormSchema>;
 
 interface RequestFormProps {
   setSheetOpen: Dispatch<SetStateAction<boolean>>;
+  request?: ExchangeRequest;
 }
 
-export function RequestForm({ setSheetOpen }: RequestFormProps) {
+export function RequestForm({ setSheetOpen, request }: RequestFormProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [showConfetti, setShowConfetti] = useState(false);
   const router = useRouter();
 
+  const isEditMode = !!request;
+
   const form = useForm<RequestFormValues>({
     resolver: zodResolver(requestFormSchema),
-    defaultValues: {
+    defaultValues: isEditMode ? {
+      id: request.id,
+      amount: request.amount,
+      type: request.type,
+      urgency: request.urgency,
+      duration: request.duration,
+    } : {
       amount: 500,
       type: "cash",
       urgency: "flexible",
@@ -61,11 +72,13 @@ export function RequestForm({ setSheetOpen }: RequestFormProps) {
   const onSubmit = (data: RequestFormValues) => {
     startTransition(async () => {
       const userDetails = getUserDetails();
-      const result = await createRequestAction(data, userDetails);
+      const result = await createOrUpdateRequestAction(data, userDetails);
       if (result.success) {
-        setShowConfetti(true);
+        if (!isEditMode) {
+          setShowConfetti(true);
+        }
         toast({
-          title: "🚀 Request Created!",
+          title: `🚀 Request ${isEditMode ? 'Updated' : 'Created'}!`,
           description: (
             <div>
               <p className="text-sm text-muted-foreground">{result.reasoning}</p>
@@ -212,7 +225,7 @@ export function RequestForm({ setSheetOpen }: RequestFormProps) {
 
           <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={isPending}>
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create Request
+            {isEditMode ? 'Save Changes' : 'Create Request'}
           </Button>
         </form>
       </Form>

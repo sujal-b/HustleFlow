@@ -1,3 +1,6 @@
+
+"use client"
+
 import type { ExchangeRequest } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +13,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Banknote, Clock, Wallet, MoreVertical, Edit, Trash2, Bell } from 'lucide-react';
+import { Banknote, Clock, Wallet, MoreVertical, Edit, Trash2, Loader2 } from 'lucide-react';
 import { TransactionDialog } from './transaction-dialog';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
@@ -21,7 +24,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
+import { RequestDialog } from './request-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from '@/hooks/use-toast';
+import { deleteRequestAction } from '@/app/actions';
+import { useRouter } from 'next/navigation';
+
 
 interface RequestCardProps {
   request: ExchangeRequest;
@@ -35,6 +54,12 @@ const statusColors: Record<ExchangeRequest['status'], string> = {
 
 export function RequestCard({ request }: RequestCardProps) {
   const [isOwner, setIsOwner] = useState(false);
+  const [isEditSheetOpen, setEditSheetOpen] = useState(false);
+  const [isDeleteAlertOpen, setDeleteAlertOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+  const router = useRouter();
+  
   const timeAgo = formatDistanceToNow(new Date(request.createdAt), { addSuffix: true });
 
   useEffect(() => {
@@ -50,8 +75,30 @@ export function RequestCard({ request }: RequestCardProps) {
     maximumFractionDigits: 0,
     minimumFractionDigits: 0,
   });
+  
+  const handleDelete = () => {
+    startTransition(async () => {
+        const userDetails = getUserDetails();
+        const result = await deleteRequestAction(request.id, userDetails);
+        if (result.success) {
+            toast({
+                title: "Request Deleted",
+                description: result.reasoning,
+            });
+            setDeleteAlertOpen(false);
+            router.refresh();
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Error Deleting Request",
+                description: result.error,
+            });
+        }
+    });
+  }
 
   return (
+    <>
     <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300 bg-card hover:bg-card/90">
       <CardHeader className="flex-row items-start gap-4 pb-4">
         <Avatar className="h-12 w-12 border-2 border-primary/20">
@@ -76,14 +123,16 @@ export function RequestCard({ request }: RequestCardProps) {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => alert("Edit functionality to be implemented.")}>
+                        <DropdownMenuItem onClick={() => setEditSheetOpen(true)}>
                             <Edit className="mr-2 h-4 w-4" />
                             <span>Edit</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => alert("Delete functionality to be implemented.")} className="text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Delete</span>
-                        </DropdownMenuItem>
+                         <AlertDialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Delete</span>
+                            </DropdownMenuItem>
+                        </AlertDialogTrigger>
                     </DropdownMenuContent>
                 </DropdownMenu>
             )}
@@ -108,5 +157,28 @@ export function RequestCard({ request }: RequestCardProps) {
         </TransactionDialog>
       </CardFooter>
     </Card>
+    
+    <RequestDialog open={isEditSheetOpen} setOpen={setEditSheetOpen} request={request} />
+
+    <AlertDialog open={isDeleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete your request
+                and remove it from view.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+
+    </>
   );
 }

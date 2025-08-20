@@ -3,7 +3,7 @@ import type { ExchangeRequest } from './types';
 import type { UserDetails } from './user-store';
 
 // In-memory store for demo purposes
-const requests: ExchangeRequest[] = [];
+let requests: ExchangeRequest[] = [];
 
 export const getRequests = (): ExchangeRequest[] => {
     // Expire requests that are older than their duration
@@ -13,6 +13,7 @@ export const getRequests = (): ExchangeRequest[] => {
         const durationInMs = parseInt(req.duration) * 24 * 60 * 60 * 1000;
         return now < (createdAt + durationInMs);
     });
+    requests = activeRequests;
 
     return activeRequests.sort((a, b) => {
         // Sort by urgency: 'urgent' comes before 'flexible'
@@ -27,11 +28,13 @@ export const getRequests = (): ExchangeRequest[] => {
     });
 };
 
+type CreateRequestData = Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency'>;
+
 export const addRequest = (
-    request: Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency'>,
-    userDetails: UserDetails | null,
+    request: CreateRequestData,
+    userDetails: UserDetails,
 ) => {
-    if (!userDetails?.name || !userDetails.anonymousName) {
+    if (!userDetails?.token) {
         throw new Error("User details not found. Cannot create request.");
     }
     
@@ -43,8 +46,8 @@ export const addRequest = (
         createdAt: new Date().toISOString(),
         user: {
             token: userDetails.token,
-            name: userDetails.anonymousName, // Use anonymous name for public display
-            realName: userDetails.name, // Store real name for confirmed transactions
+            name: userDetails.anonymousName,
+            realName: userDetails.name,
             avatarUrl: `https://placehold.co/150x150.png?text=${userDetails.anonymousName.charAt(0)}`,
             room: userDetails.room,
             contact: userDetails.contact,
@@ -53,3 +56,42 @@ export const addRequest = (
     requests.unshift(newRequest);
     return newRequest;
 };
+
+type UpdateRequestData = Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency' | 'realName' | 'avatarUrl' | 'room' | 'contact' | 'token'>;
+
+export const updateRequest = (
+    id: string,
+    updatedData: UpdateRequestData,
+    userToken: string
+) => {
+    const requestIndex = requests.findIndex(r => r.id === id);
+    if (requestIndex === -1) {
+        throw new Error("Request not found.");
+    }
+
+    if (requests[requestIndex].user.token !== userToken) {
+        throw new Error("You are not authorized to edit this request.");
+    }
+
+    requests[requestIndex] = {
+        ...requests[requestIndex],
+        ...updatedData,
+        // Ensure non-editable fields are preserved
+        createdAt: requests[requestIndex].createdAt,
+        user: requests[requestIndex].user,
+        status: requests[requestIndex].status,
+    };
+    return requests[requestIndex];
+}
+
+export const deleteRequest = (id: string, userToken: string) => {
+    const requestIndex = requests.findIndex(r => r.id === id);
+    if (requestIndex === -1) {
+        // Silently fail if not found, or throw error. Let's throw.
+        throw new Error("Request not found.");
+    }
+    if (requests[requestIndex].user.token !== userToken) {
+        throw new Error("You are not authorized to delete this request.");
+    }
+    requests.splice(requestIndex, 1);
+}
