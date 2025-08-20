@@ -104,7 +104,7 @@ export function RequestCard({ request }: RequestCardProps) {
         <CardHeader className="flex-row items-start gap-4 pb-4">
             <Avatar className="h-12 w-12 border-2 border-primary/20">
             <AvatarImage src={request.user.avatarUrl} alt={request.user.name} data-ai-hint="person abstract" />
-            <AvatarFallback>{request.user.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{request.user.name ? request.user.name.charAt(0) : '?'}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
             <CardTitle className="font-headline text-xl">{currencyFormatter.format(request.amount)}</CardTitle>
