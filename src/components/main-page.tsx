@@ -19,23 +19,17 @@ export function MainPage({ requests }: { requests: ExchangeRequest[] }) {
 
   useEffect(() => {
     // This check runs on the client after hydration
-    if (getUserDetails()?.name) {
+    const userDetails = getUserDetails();
+    if (userDetails?.name) {
       setIsUserDetailsSet(true);
-    }
-  }, []);
-
-  const handleNewRequestClick = () => {
-    if (isUserDetailsSet) {
-      setRequestSheetOpen(true);
     } else {
       setUserDetailsDialogOpen(true);
     }
-  };
+  }, []);
 
   const onUserDetailsSave = () => {
     setIsUserDetailsSet(true);
     setUserDetailsDialogOpen(false);
-    setRequestSheetOpen(true); // Open request dialog after saving details
   };
 
   const filteredRequests = requests.filter(request => {
@@ -45,7 +39,7 @@ export function MainPage({ requests }: { requests: ExchangeRequest[] }) {
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <AppHeader setRequestSheetOpen={handleNewRequestClick} />
+      <AppHeader setRequestSheetOpen={() => setRequestSheetOpen(true)} />
       <main className="flex-1 p-4 sm:p-6 md:p-8">
         <div className="mx-auto max-w-5xl">
           <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -86,7 +80,7 @@ export function MainPage({ requests }: { requests: ExchangeRequest[] }) {
                   }
                 </p>
                 <Button 
-                  onClick={handleNewRequestClick}
+                  onClick={() => setRequestSheetOpen(true)}
                   className="mt-4"
                 >
                   Create Request

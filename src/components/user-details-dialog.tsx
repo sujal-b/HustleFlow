@@ -54,14 +54,22 @@ export function UserDetailsDialog({ open, setOpen, onSave }: UserDetailsDialogPr
     saveUserDetails(data);
     onSave();
   };
+  
+  const handleOpenChange = (isOpen: boolean) => {
+    // Prevent closing the dialog by clicking outside or pressing Escape
+    // It can only be "closed" by saving the details.
+    if (form.formState.isSubmitted) {
+        setOpen(isOpen);
+    }
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
-          <DialogTitle>Enter Your Details</DialogTitle>
+          <DialogTitle>Welcome to HustleFlow!</DialogTitle>
           <DialogDescription>
-            This information is kept private until a transaction is fully confirmed. It's stored locally on your device for 24 hours.
+            Please enter your details to get started. This is stored locally on your device for 24 hours and is kept private until a transaction is fully confirmed.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -106,7 +114,6 @@ export function UserDetailsDialog({ open, setOpen, onSave }: UserDetailsDialogPr
               )}
             />
             <DialogFooter>
-                <Button type="button" variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
                 <Button type="submit">Save and Continue</Button>
             </DialogFooter>
           </form>
