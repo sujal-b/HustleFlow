@@ -6,7 +6,7 @@ import type { UserDetails } from './user-store';
 let requests: ExchangeRequest[] = [];
 
 // This should be in an environment variable in a real app
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
+const ADMIN_TOKEN = "admin_super_secret_token";
 
 export const getRequests = (): ExchangeRequest[] => {
     // Expire requests that are older than their duration
