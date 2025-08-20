@@ -2,6 +2,7 @@
 'use client';
 
 const TOKEN_KEY = 'hustleflow_token';
+const ADMIN_TOKEN = 'admin_super_secret_token';
 
 const ANONYMOUS_NAMES = [
     'Panda', 'Turtle', 'Seahorse', 'Squirrel', 'Koala', 'Dolphin', 
@@ -25,6 +26,18 @@ function getRandomAnonymousName(): string {
     return ANONYMOUS_NAMES[Math.floor(Math.random() * ANONYMOUS_NAMES.length)];
 }
 
+function getAdminDetails(): UserDetails {
+    return {
+        token: ADMIN_TOKEN,
+        name: 'Admin User',
+        anonymousName: 'Admin',
+        room: 'Control Room',
+        contact: 'N/A',
+        expiresAt: new Date().getTime() + 24 * 60 * 60 * 1000,
+    };
+}
+
+
 function getTokenWithExpiry(): UserDetails | null {
     if (typeof window === 'undefined') {
         return null;
@@ -35,6 +48,9 @@ function getTokenWithExpiry(): UserDetails | null {
     }
     try {
         const item = JSON.parse(itemStr);
+        if (item.token === ADMIN_TOKEN) {
+            return getAdminDetails();
+        }
         const now = new Date();
         if (now.getTime() > item.expiresAt) {
             localStorage.removeItem(TOKEN_KEY);
@@ -43,6 +59,10 @@ function getTokenWithExpiry(): UserDetails | null {
         return item;
     } catch (e) {
         console.error("Error parsing user details from localStorage", e);
+        // This might be just a raw token string from the admin login
+        if (itemStr === ADMIN_TOKEN) {
+            return getAdminDetails();
+        }
         localStorage.removeItem(TOKEN_KEY);
         return null;
     }
