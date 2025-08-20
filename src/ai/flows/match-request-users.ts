@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -17,6 +18,7 @@ const MatchRequestUsersInputSchema = z.object({
   currency: z.string().describe('The currency to be exchanged.'),
   cashOrDigital: z.enum(['cash', 'digital']).describe('The type of exchange (cash or digital).'),
   urgency: z.enum(['urgent', 'flexible']).describe('The urgency of the request.'),
+  duration: z.enum(['1', '3', '7']).describe('The duration the request is active for in days.'),
   userPreferences: z.string().optional().describe('Additional user preferences for the match.'),
 });
 export type MatchRequestUsersInput = z.infer<typeof MatchRequestUsersInputSchema>;
@@ -38,13 +40,14 @@ const matchRequestUsersPrompt = ai.definePrompt({
   prompt: `You are an AI assistant designed to match users for currency exchange requests.
 
   Given the following exchange request details, identify the best user matches from a database of users (not accessible to you directly).
-  Consider the amount, currency, urgency, preferred exchange type (cash or digital), and any user preferences specified.
+  Consider the amount, currency, urgency, preferred exchange type (cash or digital), duration, and any user preferences specified.
   Return a list of user IDs that represent the best possible matches and a brief explanation of why those users were selected.
 
   Request ID: {{{requestId}}}
   Amount: {{{amount}}} {{{currency}}}
   Urgency: {{{urgency}}}
   Exchange Type: {{{cashOrDigital}}}
+  Active for: {{{duration}}} days
   User Preferences: {{{userPreferences}}}
 
   Return ONLY a JSON object that adheres to the following schema:

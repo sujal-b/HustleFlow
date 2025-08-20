@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
@@ -22,6 +23,7 @@ import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
 import { Confetti } from "./confetti";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 const requestFormSchema = z.object({
   amount: z.coerce
@@ -30,6 +32,7 @@ const requestFormSchema = z.object({
     .max(100000, { message: "Amount must not exceed 100,000." }),
   type: z.enum(["cash", "digital"]),
   urgency: z.enum(["urgent", "flexible"]),
+  duration: z.enum(["1", "3", "7"]),
 });
 
 type RequestFormValues = z.infer<typeof requestFormSchema>;
@@ -50,6 +53,7 @@ export function RequestForm({ setSheetOpen }: RequestFormProps) {
       amount: 500,
       type: "cash",
       urgency: "flexible",
+      duration: "3",
     },
   });
 
@@ -177,6 +181,29 @@ export function RequestForm({ setSheetOpen }: RequestFormProps) {
                     </FormItem>
                   </RadioGroup>
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="duration"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Request Duration</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPending}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="How long should this request be active?" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="1">1 Day</SelectItem>
+                    <SelectItem value="3">3 Days</SelectItem>
+                    <SelectItem value="7">7 Days</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}

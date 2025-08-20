@@ -1,3 +1,4 @@
+
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -9,6 +10,7 @@ const requestFormSchema = z.object({
   amount: z.coerce.number(),
   type: z.enum(["cash", "digital"]),
   urgency: z.enum(["urgent", "flexible"]),
+  duration: z.enum(["1", "3", "7"]),
 });
 
 type ActionResponse = {
@@ -25,13 +27,14 @@ export async function createRequestAction(
     return { success: false, error: "Invalid form data provided." };
   }
   
-  const { amount, type, urgency } = validation.data;
+  const { amount, type, urgency, duration } = validation.data;
 
   try {
     const newRequest = addRequest({
         amount,
         type,
         urgency,
+        duration
     });
 
     const aiInput: MatchRequestUsersInput = {
@@ -40,6 +43,7 @@ export async function createRequestAction(
         currency: newRequest.currency,
         cashOrDigital: newRequest.type,
         urgency: newRequest.urgency,
+        duration: newRequest.duration,
         userPreferences: "Prefers users with quick response times."
     };
 

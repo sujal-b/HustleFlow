@@ -1,3 +1,4 @@
+
 import type { ExchangeRequest } from './types';
 
 const anonymousNames = [
@@ -10,7 +11,17 @@ const getRandomName = () => anonymousNames[Math.floor(Math.random() * anonymousN
 const requests: ExchangeRequest[] = [];
 
 export const getRequests = (): ExchangeRequest[] => {
-    return requests.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return requests.sort((a, b) => {
+        // Sort by urgency: 'urgent' comes before 'flexible'
+        if (a.urgency === 'urgent' && b.urgency === 'flexible') {
+            return -1;
+        }
+        if (a.urgency === 'flexible' && b.urgency === 'urgent') {
+            return 1;
+        }
+        // If urgency is the same, sort by creation date (newest first)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 };
 
 export const addRequest = (request: Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency'>) => {
