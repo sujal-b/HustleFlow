@@ -44,7 +44,10 @@ export async function createRequestAction(
         cashOrDigital: newRequest.type,
         urgency: newRequest.urgency,
         duration: newRequest.duration,
-        userPreferences: "Prefers users with quick response times."
+        userPreferences: "Prefers users with quick response times.",
+        user: {
+            token: newRequest.user.token
+        }
     };
 
     const aiResult = await matchRequestUsers(aiInput);

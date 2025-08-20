@@ -20,6 +20,9 @@ const MatchRequestUsersInputSchema = z.object({
   urgency: z.enum(['urgent', 'flexible']).describe('The urgency of the request.'),
   duration: z.enum(['1', '3', '7']).describe('The duration the request is active for in days.'),
   userPreferences: z.string().optional().describe('Additional user preferences for the match.'),
+  user: z.object({
+    token: z.string().describe("The anonymous token of the user making the request.")
+  }).describe("The user making the request.")
 });
 export type MatchRequestUsersInput = z.infer<typeof MatchRequestUsersInputSchema>;
 
@@ -41,6 +44,7 @@ const matchRequestUsersPrompt = ai.definePrompt({
 
   Given the following exchange request details, identify the best user matches from a database of users (not accessible to you directly).
   Consider the amount, currency, urgency, preferred exchange type (cash or digital), duration, and any user preferences specified.
+  The user making the request has the token: {{{user.token}}}. Do not match them with themselves.
   Return a list of user IDs that represent the best possible matches and a brief explanation of why those users were selected.
 
   Request ID: {{{requestId}}}
