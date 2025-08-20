@@ -11,6 +11,7 @@ import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 import { UserDetailsDialog } from "./user-details-dialog";
 import { getUserDetails } from "@/lib/user-store";
 import type { UserDetails } from "@/lib/user-store";
+import { PageHeader } from "./page-header";
 
 export function MainPage({ requests }: { requests: ExchangeRequest[] }) {
   const [requestSheetOpen, setRequestSheetOpen] = useState(false);
@@ -92,6 +93,11 @@ export function MainPage({ requests }: { requests: ExchangeRequest[] }) {
       <AppHeader setRequestSheetOpen={() => setRequestSheetOpen(true)} />
       <main className="flex-1 p-4 sm:p-6 md:p-8">
         <div className="mx-auto max-w-5xl">
+
+          <PageHeader
+            title="HustleFlow"
+            description="Seamlessly exchange currencies with trusted peers."
+          />
           
           {myActivityRequests.length > 0 && (
              <div className="mb-12">
