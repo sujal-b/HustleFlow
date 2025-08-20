@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { ExchangeRequest, TransactionOffer } from "@/lib/types";
+import type { ExchangeRequest } from "@/lib/types";
 import { useState, useTransition, useEffect } from "react";
 import {
   Dialog,
@@ -10,16 +10,17 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose
+  DialogClose,
+  DialogTrigger
 } from "@/components/ui/dialog";
 import { Button } from "./ui/button";
-import { Check, CheckCircle2, Home, Loader2, Lock, Phone, Send, Star, ThumbsDown, ThumbsUp, User, X } from "lucide-react";
-import { Textarea } from "./ui/textarea";
+import { Check, CheckCircle2, Home, Loader2, Lock, Phone, Send, User, X } from "lucide-react";
 import { getUserDetails } from "@/lib/user-store";
 import { useToast } from "@/hooks/use-toast";
 import { acceptOfferAction, makeOfferAction, rejectOfferAction } from "@/app/actions";
 import { Input } from "./ui/input";
 import { Badge } from "./ui/badge";
+import type { UserDetails } from "@/lib/user-store";
 
 interface TransactionDialogProps {
   request: ExchangeRequest;
@@ -29,7 +30,7 @@ interface TransactionDialogProps {
 export function TransactionDialog({ request, children }: TransactionDialogProps) {
   const [open, setOpen] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<UserDetails | null>(null);
   const [isPending, startTransition] = useTransition();
   const [offerAmount, setOfferAmount] = useState<number>(request.amount);
   const { toast } = useToast();
