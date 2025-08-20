@@ -20,9 +20,9 @@ interface RequestCardProps {
 }
 
 const statusColors: Record<ExchangeRequest['status'], string> = {
-    "Open": "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/50 dark:text-blue-300",
-    "Partially Matched": "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/50 dark:text-yellow-300",
-    "Fully Matched": "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-300",
+    "Open": "bg-blue-900/50 text-blue-300 border-blue-300/50",
+    "Partially Matched": "bg-yellow-900/50 text-yellow-300 border-yellow-300/50",
+    "Fully Matched": "bg-green-900/50 text-green-300 border-green-300/50",
 }
 
 export function RequestCard({ request }: RequestCardProps) {
@@ -36,7 +36,7 @@ export function RequestCard({ request }: RequestCardProps) {
   });
 
   return (
-    <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300">
+    <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300 bg-card hover:bg-card/90">
       <CardHeader className="flex-row items-start gap-4 pb-4">
         <Avatar className="h-12 w-12 border-2 border-primary/20">
           <AvatarImage src={request.user.avatarUrl} alt={request.user.name} data-ai-hint="person portrait" />
@@ -46,7 +46,7 @@ export function RequestCard({ request }: RequestCardProps) {
           <CardTitle className="font-headline text-xl">{currencyFormatter.format(request.amount)}</CardTitle>
           <CardDescription className="flex items-center gap-2">
             <span>by {request.user.name}</span>
-            <span className="flex items-center gap-0.5"><Star className="w-3 h-3 text-yellow-500 fill-yellow-400" /> {request.user.rating}</span>
+            <span className="flex items-center gap-0.5"><Star className="w-3 h-3 text-yellow-400 fill-yellow-500" /> {request.user.rating}</span>
           </CardDescription>
         </div>
         <Badge variant="outline" className={cn("capitalize", statusColors[request.status])}>
