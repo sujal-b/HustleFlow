@@ -5,6 +5,9 @@ import type { UserDetails } from './user-store';
 // In-memory store for demo purposes
 let requests: ExchangeRequest[] = [];
 
+// Define a constant for the admin token
+const ADMIN_TOKEN = "admin_super_secret_token";
+
 export const getRequests = (): ExchangeRequest[] => {
     // Expire requests that are older than their duration
     const now = new Date().getTime();
@@ -71,7 +74,10 @@ export const updateRequest = (
         throw new Error("Request not found.");
     }
     
-    if (requests[requestIndex].user.token !== userToken) {
+    const isOwner = requests[requestIndex].user.token === userToken;
+    const isAdmin = userToken === ADMIN_TOKEN;
+
+    if (!isOwner && !isAdmin) {
         throw new Error("You are not authorized to edit this request.");
     }
 
@@ -94,7 +100,10 @@ export const deleteRequest = (id: string, userToken: string) => {
         throw new Error("Request not found.");
     }
     
-    if (requests[requestIndex].user.token !== userToken) {
+    const isOwner = requests[requestIndex].user.token === userToken;
+    const isAdmin = userToken === ADMIN_TOKEN;
+
+    if (!isOwner && !isAdmin) {
         throw new Error("You are not authorized to delete this request.");
     }
     requests.splice(requestIndex, 1);

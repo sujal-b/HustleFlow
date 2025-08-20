@@ -46,6 +46,8 @@ interface RequestCardProps {
   request: ExchangeRequest;
 }
 
+const ADMIN_TOKEN = "admin_super_secret_token";
+
 const statusColors: Record<ExchangeRequest['status'], string> = {
     "Open": "bg-blue-900/50 text-blue-300 border-blue-300/50",
     "Partially Matched": "bg-yellow-900/50 text-yellow-300 border-yellow-300/50",
@@ -65,7 +67,9 @@ export function RequestCard({ request }: RequestCardProps) {
   useEffect(() => {
     const currentUser = getUserDetails();
     if (currentUser) {
-        setCanManage(currentUser.token === request.user.token);
+        const isOwner = currentUser.token === request.user.token;
+        const isAdmin = currentUser.token === ADMIN_TOKEN;
+        setCanManage(isOwner || isAdmin);
     }
   }, [request.user.token]);
 
@@ -116,25 +120,25 @@ export function RequestCard({ request }: RequestCardProps) {
                   {request.status}
               </Badge>
               {canManage && (
-                  <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreVertical className="h-4 w-4" />
-                          </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditSheetOpen(true)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              <span>Edit</span>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setEditSheetOpen(true)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Edit</span>
+                        </DropdownMenuItem>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete</span>
                           </DropdownMenuItem>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                <span>Delete</span>
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                      </DropdownMenuContent>
-                  </DropdownMenu>
+                        </AlertDialogTrigger>
+                    </DropdownMenuContent>
+                </DropdownMenu>
               )}
           </div>
       </CardHeader>
