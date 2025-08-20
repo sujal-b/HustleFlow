@@ -4,13 +4,11 @@ import { revalidatePath } from "next/cache";
 import * as z from "zod";
 import { matchRequestUsers, type MatchRequestUsersInput } from "@/ai/flows/match-request-users";
 import { addRequest } from "@/lib/requests-store";
-import type { Currency } from "@/lib/types";
 
 const requestFormSchema = z.object({
   amount: z.coerce.number(),
-  currency: z.enum(["USD", "EUR", "GBP", "JPY"]),
   type: z.enum(["cash", "digital"]),
-  location: z.string().optional(),
+  urgency: z.enum(["urgent", "flexible"]),
 });
 
 type ActionResponse = {
@@ -27,14 +25,13 @@ export async function createRequestAction(
     return { success: false, error: "Invalid form data provided." };
   }
   
-  const { amount, currency, type, location } = validation.data;
+  const { amount, type, urgency } = validation.data;
 
   try {
     const newRequest = addRequest({
         amount,
-        currency: currency as Currency,
         type,
-        location,
+        urgency,
     });
 
     const aiInput: MatchRequestUsersInput = {
@@ -42,7 +39,7 @@ export async function createRequestAction(
         amount: newRequest.amount,
         currency: newRequest.currency,
         cashOrDigital: newRequest.type,
-        location: newRequest.location,
+        urgency: newRequest.urgency,
         userPreferences: "Prefers users with high ratings and quick response times."
     };
 

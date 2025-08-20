@@ -1,12 +1,12 @@
 
-export type Currency = 'USD' | 'EUR' | 'GBP' | 'JPY';
+export type Currency = 'INR';
 
 export interface ExchangeRequest {
   id: string;
   amount: number;
   currency: Currency;
   type: 'cash' | 'digital';
-  location?: string;
+  urgency: 'urgent' | 'flexible';
   status: 'Open' | 'Partially Matched' | 'Fully Matched';
   createdAt: string; // ISO string
   user: {

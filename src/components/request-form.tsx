@@ -12,20 +12,12 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
@@ -36,9 +28,8 @@ const requestFormSchema = z.object({
     .number({ invalid_type_error: "Please enter a valid number." })
     .min(1, { message: "Amount must be at least 1." })
     .max(100000, { message: "Amount must not exceed 100,000." }),
-  currency: z.enum(["USD", "EUR", "GBP", "JPY"]),
   type: z.enum(["cash", "digital"]),
-  location: z.string().optional(),
+  urgency: z.enum(["urgent", "flexible"]),
 });
 
 type RequestFormValues = z.infer<typeof requestFormSchema>;
@@ -57,9 +48,8 @@ export function RequestForm({ setSheetOpen }: RequestFormProps) {
     resolver: zodResolver(requestFormSchema),
     defaultValues: {
       amount: 500,
-      currency: "USD",
       type: "cash",
-      location: "",
+      urgency: "flexible",
     },
   });
 
@@ -99,38 +89,10 @@ export function RequestForm({ setSheetOpen }: RequestFormProps) {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
-            name="currency"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Currency</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  disabled={isPending}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a currency" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="USD">USD - US Dollar</SelectItem>
-                    <SelectItem value="EUR">EUR - Euro</SelectItem>
-                    <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                    <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Amount</FormLabel>
+                <FormLabel>Amount (INR)</FormLabel>
                  <FormControl>
                     <div className="flex items-center gap-4">
                         <Input
@@ -190,20 +152,36 @@ export function RequestForm({ setSheetOpen }: RequestFormProps) {
 
           <FormField
             control={form.control}
-            name="location"
+            name="urgency"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Exchange Spot (Optional)</FormLabel>
+              <FormItem className="space-y-3">
+                <FormLabel>Urgency</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Downtown Cafe" {...field} disabled={isPending} />
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="flex gap-4"
+                    disabled={isPending}
+                  >
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="flexible" />
+                      </FormControl>
+                      <FormLabel className="font-normal">Flexible</FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="urgent" />
+                      </FormControl>
+                      <FormLabel className="font-normal">Urgent</FormLabel>
+                    </FormItem>
+                  </RadioGroup>
                 </FormControl>
-                <FormDescription>
-                  Suggest a public place for cash exchanges.
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
+
           <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={isPending}>
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Find My Match

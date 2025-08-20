@@ -4,10 +4,10 @@ import type { ExchangeRequest } from './types';
 const requests: ExchangeRequest[] = [
   {
     id: 'req_1',
-    amount: 500,
-    currency: 'USD',
+    amount: 40000,
+    currency: 'INR',
     type: 'cash',
-    location: 'Grand Central, NYC',
+    urgency: 'urgent',
     status: 'Partially Matched',
     createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
     user: {
@@ -18,9 +18,10 @@ const requests: ExchangeRequest[] = [
   },
   {
     id: 'req_2',
-    amount: 1200,
-    currency: 'EUR',
+    amount: 100000,
+    currency: 'INR',
     type: 'digital',
+    urgency: 'flexible',
     status: 'Open',
     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
     user: {
@@ -31,10 +32,10 @@ const requests: ExchangeRequest[] = [
   },
   {
     id: 'req_3',
-    amount: 250,
-    currency: 'GBP',
+    amount: 20000,
+    currency: 'INR',
     type: 'cash',
-    location: 'London Bridge',
+    urgency: 'flexible',
     status: 'Fully Matched',
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
     user: {
@@ -46,8 +47,9 @@ const requests: ExchangeRequest[] = [
     {
     id: 'req_4',
     amount: 80000,
-    currency: 'JPY',
+    currency: 'INR',
     type: 'digital',
+    urgency: 'urgent',
     status: 'Open',
     createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     user: {
@@ -62,10 +64,11 @@ export const getRequests = (): ExchangeRequest[] => {
     return requests.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
 
-export const addRequest = (request: Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status'>) => {
+export const addRequest = (request: Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency'>) => {
     const newRequest: ExchangeRequest = {
         ...request,
         id: `req_${crypto.randomUUID()}`,
+        currency: 'INR',
         status: 'Open',
         createdAt: new Date().toISOString(),
         user: {

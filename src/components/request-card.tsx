@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Banknote, MapPin, Star, Wallet } from 'lucide-react';
+import { Banknote, Clock, Star, Wallet } from 'lucide-react';
 import { TransactionDialog } from './transaction-dialog';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
@@ -28,9 +28,9 @@ const statusColors: Record<ExchangeRequest['status'], string> = {
 export function RequestCard({ request }: RequestCardProps) {
   const timeAgo = formatDistanceToNow(new Date(request.createdAt), { addSuffix: true });
 
-  const currencyFormatter = new Intl.NumberFormat('en-US', {
+  const currencyFormatter = new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: request.currency,
+    currency: 'INR',
     maximumFractionDigits: 0,
     minimumFractionDigits: 0,
   });
@@ -58,12 +58,10 @@ export function RequestCard({ request }: RequestCardProps) {
             {request.type === 'cash' ? <Banknote className="w-4 h-4 text-primary"/> : <Wallet className="w-4 h-4 text-primary" />}
             <span className="capitalize">{request.type} Exchange</span>
         </div>
-        {request.location && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4 text-primary" />
-                <span>{request.location}</span>
-            </div>
-        )}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock className="w-4 h-4 text-primary" />
+            <span className="capitalize">{request.urgency}</span>
+        </div>
       </CardContent>
       <CardFooter className="flex-col sm:flex-row sm:justify-between items-stretch sm:items-center gap-2 pt-4">
         <p className="text-xs text-muted-foreground">{timeAgo}</p>
