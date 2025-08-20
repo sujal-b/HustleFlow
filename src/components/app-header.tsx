@@ -26,11 +26,16 @@ export function AppHeader({ setRequestSheetOpen }: AppHeaderProps) {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
-      <div className="flex items-center gap-2">
-        <ArrowRightLeft className="h-7 w-7 text-primary" />
-        <h1 className="font-headline text-2xl font-bold tracking-tight">
-          HustleFlow
-        </h1>
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+            <ArrowRightLeft className="h-7 w-7 text-primary" />
+            <h1 className="font-headline text-2xl font-bold tracking-tight">
+            HustleFlow
+            </h1>
+        </div>
+        <p className="hidden md:block text-sm text-muted-foreground border-l pl-4">
+            Seamlessly exchange currencies with trusted peers.
+        </p>
       </div>
       <div className="flex items-center gap-2">
         {isAdmin && (
