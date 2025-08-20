@@ -48,8 +48,11 @@ export async function createRequestAction(
     return { success: false, error: "Invalid form data provided." };
   }
   
+  if (!userDetails) {
+    return { success: false, error: "Invalid user details provided. Please fill out your details first." };
+  }
   const userValidation = userDetailsSchema.safeParse(userDetails);
-   if (!userValidation.success || !userDetails) {
+   if (!userValidation.success) {
     console.error("User details validation failed:", userValidation.error);
     return { success: false, error: "Invalid user details provided." };
   }
@@ -77,8 +80,11 @@ export async function updateRequestAction(
     return { success: false, error: "Invalid form data provided." };
   }
   
+  if (!userDetails) {
+    return { success: false, error: "Invalid user details provided. Please fill out your details first." };
+  }
   const userValidation = userDetailsSchema.safeParse(userDetails);
-   if (!userValidation.success || !userDetails) {
+   if (!userValidation.success) {
     console.error("User details validation failed:", userValidation.error);
     return { success: false, error: "Invalid user details provided." };
   }
@@ -106,8 +112,11 @@ export async function deleteRequestAction(
         return { success: false, error: "Request ID is required." };
     }
 
+    if (!userDetails) {
+      return { success: false, error: "Invalid user details provided. Please fill out your details first." };
+    }
     const userValidation = userDetailsSchema.safeParse(userDetails);
-    if (!userValidation.success || !userDetails) {
+    if (!userValidation.success) {
         return { success: false, error: "Invalid user details provided." };
     }
 
