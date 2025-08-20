@@ -7,60 +7,7 @@ const anonymousNames = [
 const getRandomName = () => anonymousNames[Math.floor(Math.random() * anonymousNames.length)];
 
 // In-memory store for demo purposes
-const requests: ExchangeRequest[] = [
-  {
-    id: 'req_1',
-    amount: 40000,
-    currency: 'INR',
-    type: 'cash',
-    urgency: 'urgent',
-    status: 'Partially Matched',
-    createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-    user: {
-      name: getRandomName(),
-      avatarUrl: 'https://placehold.co/150x150.png',
-    },
-  },
-  {
-    id: 'req_2',
-    amount: 100000,
-    currency: 'INR',
-    type: 'digital',
-    urgency: 'flexible',
-    status: 'Open',
-    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    user: {
-      name: getRandomName(),
-      avatarUrl: 'https://placehold.co/150x150.png',
-    },
-  },
-  {
-    id: 'req_3',
-    amount: 20000,
-    currency: 'INR',
-    type: 'cash',
-    urgency: 'flexible',
-    status: 'Fully Matched',
-    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    user: {
-      name: getRandomName(),
-      avatarUrl: 'https://placehold.co/150x150.png',
-    },
-  },
-    {
-    id: 'req_4',
-    amount: 80000,
-    currency: 'INR',
-    type: 'digital',
-    urgency: 'urgent',
-    status: 'Open',
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    user: {
-      name: getRandomName(),
-      avatarUrl: 'https://placehold.co/150x150.png',
-    },
-  },
-];
+const requests: ExchangeRequest[] = [];
 
 export const getRequests = (): ExchangeRequest[] => {
     return requests.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
