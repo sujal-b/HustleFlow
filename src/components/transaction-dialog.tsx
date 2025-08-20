@@ -1,22 +1,25 @@
 
 "use client";
 
-import type { ExchangeRequest } from "@/lib/types";
-import { useState } from "react";
+import type { ExchangeRequest, TransactionOffer } from "@/lib/types";
+import { useState, useTransition, useEffect } from "react";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose
+} from "@/components/ui/dialog";
 import { Button } from "./ui/button";
-import { CheckCircle2, Lock, Star, Phone, Home, User, Bell } from "lucide-react";
+import { Check, CheckCircle2, Home, Loader2, Lock, Phone, Send, Star, ThumbsDown, ThumbsUp, User, X } from "lucide-react";
 import { Textarea } from "./ui/textarea";
+import { getUserDetails } from "@/lib/user-store";
+import { useToast } from "@/hooks/use-toast";
+import { acceptOfferAction, makeOfferAction, rejectOfferAction } from "@/app/actions";
+import { Input } from "./ui/input";
+import { Badge } from "./ui/badge";
 
 interface TransactionDialogProps {
   request: ExchangeRequest;
@@ -24,96 +27,181 @@ interface TransactionDialogProps {
 }
 
 export function TransactionDialog({ request, children }: TransactionDialogProps) {
-  const [isConfirmed, setIsConfirmed] = useState(false);
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isPending, startTransition] = useTransition();
+  const [offerAmount, setOfferAmount] = useState<number>(request.amount);
+  const { toast } = useToast();
 
-  const handleConfirm = () => {
-    setIsConfirmed(true);
+  useEffect(() => {
+    const user = getUserDetails();
+    if (user) {
+      setCurrentUser(user);
+      setIsOwner(user.token === request.user.token);
+    }
+  }, [request.user.token, open]);
+
+  const handleMakeOffer = () => {
+    startTransition(async () => {
+      const result = await makeOfferAction({ requestId: request.id, offerAmount }, currentUser);
+      if (result.success) {
+        toast({ title: "Offer Sent", description: result.reasoning });
+        setOpen(false);
+      } else {
+        toast({ variant: "destructive", title: "Error", description: result.error });
+      }
+    });
   };
 
-  const handleFeedback = () => {
-    setFeedbackSubmitted(true);
+  const handleAcceptOffer = (offerId: string) => {
+    startTransition(async () => {
+        const result = await acceptOfferAction(request.id, offerId, currentUser?.token);
+        if (result.success) {
+            toast({ title: "Offer Accepted!", description: result.reasoning });
+        } else {
+            toast({ variant: "destructive", title: "Error", description: result.error });
+        }
+    });
+  }
+  
+  const handleRejectOffer = (offerId: string) => {
+    startTransition(async () => {
+        const result = await rejectOfferAction(request.id, offerId, currentUser?.token);
+        if (result.success) {
+            toast({ title: "Offer Rejected", description: result.reasoning });
+        } else {
+            toast({ variant: "destructive", title: "Error", description: result.error });
+        }
+    });
   }
 
+  const currencyFormatter = new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  });
+
+  const confirmedMatch = request.status === 'Fully Matched' ? 
+    request.offers.find(o => o.status === 'accepted') : undefined;
+  
+  const canMakeOffer = !isOwner && request.status !== 'Fully Matched' && !request.offers.some(o => o.user.token === currentUser?.token);
+
   return (
-    <AlertDialog onOpenChange={(open) => { if(!open) { setIsConfirmed(false); setFeedbackSubmitted(false); }}}>
-      <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle className="font-headline">
-            {isConfirmed ? "Transaction Details" : "Confirm Exchange"}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {isConfirmed
-              ? "Your transaction is confirmed. You can now contact the user."
-              : `You are about to start a transaction with User ${request.user.name}.`}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        
-        {isConfirmed ? (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-headline">Request Details</DialogTitle>
+          <DialogDescription>
+            {isOwner ? "Manage offers for your request." : "Make an offer for this exchange."}
+          </DialogDescription>
+        </DialogHeader>
+
+        {confirmedMatch && (currentUser?.token === confirmedMatch.user.token || isOwner) ? (
+            // View for the two matched parties
             <div className="space-y-4 py-4">
-                {feedbackSubmitted ? (
-                    <div className="flex flex-col items-center justify-center text-center p-8 bg-secondary rounded-lg">
-                        <CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />
-                        <h3 className="text-lg font-semibold">Thank you!</h3>
-                        <p className="text-muted-foreground">Your feedback has been submitted.</p>
-                    </div>
-                ) : (
-                    <>
-                    <div className="rounded-lg border p-4 space-y-3">
-                        <div>
-                            <p className="font-semibold text-sm text-muted-foreground">Transaction ID:</p>
-                            <p className="font-mono bg-muted p-2 rounded-md text-sm">{request.id}</p>
-                        </div>
-                        <div className="pt-2">
-                             <p className="font-semibold text-sm text-muted-foreground mb-2">Contact Info:</p>
-                             <div className="space-y-2">
-                                <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary"/>{request.user.realName}</p>
-                                <p className="flex items-center gap-2"><Home className="w-4 h-4 text-primary"/>{request.user.room}</p>
-                                {request.user.contact && <p className="flex items-center gap-2"><Phone className="w-4 h-4 text-primary"/>{request.user.contact}</p>}
-                             </div>
-                        </div>
-                    </div>
-                    <Button variant="outline" onClick={() => alert("Notification functionality to be implemented.")}>
-                        <Bell className="w-4 h-4 mr-2" />
-                        Notify User
-                    </Button>
+                 <div className="flex flex-col items-center justify-center text-center p-8 bg-green-900/20 rounded-lg">
+                    <CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />
+                    <h3 className="text-lg font-semibold">Transaction Confirmed!</h3>
+                    <p className="text-muted-foreground">You are matched. Here are the details:</p>
+                </div>
+                 <div className="rounded-lg border p-4 space-y-3">
+                    <p className="font-semibold text-sm text-muted-foreground mb-2">Contact Info for {isOwner ? confirmedMatch.user.name : request.user.name}:</p>
                      <div className="space-y-2">
-                        <h4 className="font-semibold">Leave Anonymous Feedback</h4>
-                        <Textarea placeholder={`How was your exchange with User ${request.user.name}?`} />
+                        <p className="flex items-center gap-2"><User className="w-4 h-4 text-primary"/>{isOwner ? confirmedMatch.user.realName : request.user.realName}</p>
+                        <p className="flex items-center gap-2"><Home className="w-4 h-4 text-primary"/>{isOwner ? confirmedMatch.user.room : request.user.room}</p>
+                        {(isOwner ? confirmedMatch.user.contact : request.user.contact) && 
+                            <p className="flex items-center gap-2"><Phone className="w-4 h-4 text-primary"/>{isOwner ? confirmedMatch.user.contact : request.user.contact}</p>
+                        }
                      </div>
-                    </>
+                </div>
+                <Button variant="outline" onClick={() => alert("Notification functionality to be implemented.")}>
+                    <Send className="w-4 h-4 mr-2" />
+                    Send Secure Message
+                </Button>
+            </div>
+        ) : isOwner ? (
+            // Owner's view: list of offers
+            <div className="py-4 space-y-4">
+                {request.offers.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No offers yet.</p>
+                ) : (
+                    <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                    {request.offers.filter(o => o.status === 'pending').map(offer => (
+                        <div key={offer.id} className="flex items-center justify-between rounded-lg border p-3">
+                            <div>
+                                <p className="font-semibold">{offer.user.name}</p>
+                                <p className="text-primary font-bold">{currencyFormatter.format(offer.amount)}</p>
+                            </div>
+                            {isPending ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <div className="flex gap-2">
+                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400 hover:text-red-400 hover:bg-red-900/50" onClick={() => handleRejectOffer(offer.id)}>
+                                        <X className="w-5 h-5" />
+                                    </Button>
+                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-green-400 hover:text-green-400 hover:bg-green-900/50" onClick={() => handleAcceptOffer(offer.id)}>
+                                        <Check className="w-5 h-5" />
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                     {request.offers.filter(o => o.status !== 'pending').map(offer => (
+                        <div key={offer.id} className="flex items-center justify-between rounded-lg border p-3 opacity-50">
+                            <div>
+                                <p className="font-semibold line-through">{offer.user.name}</p>
+                                <p className="text-muted-foreground font-bold line-through">{currencyFormatter.format(offer.amount)}</p>
+                            </div>
+                            <Badge variant={offer.status === 'accepted' ? 'default' : 'destructive'} className="capitalize">{offer.status}</Badge>
+                        </div>
+                    ))}
+                    </div>
                 )}
             </div>
         ) : (
-            <div className="flex flex-col items-center justify-center text-center p-8 bg-secondary rounded-lg">
-                <Lock className="w-16 h-16 text-primary/80 mb-4"/>
-                <p className="text-muted-foreground max-w-xs">Real user details are hidden for privacy. Contact info and a secure chat room will be unlocked upon confirmation from all parties.</p>
+             // Non-owner's view
+            <div className="py-4 space-y-4">
+                {request.status === 'Fully Matched' ? (
+                     <p className="text-center text-muted-foreground py-8">This request has been fully matched.</p>
+                ) : request.offers.some(o => o.user.token === currentUser?.token) ? (
+                    <p className="text-center text-muted-foreground py-8">You have already made an offer on this request.</p>
+                ) : (
+                    <div className="space-y-4">
+                        <div className="flex flex-col items-center justify-center text-center p-8 bg-secondary rounded-lg">
+                            <Lock className="w-16 h-16 text-primary/80 mb-4"/>
+                            <p className="text-muted-foreground max-w-xs">Real user details are hidden for privacy. They will be revealed upon confirmation from all parties.</p>
+                        </div>
+                         <div className="space-y-2">
+                            <label htmlFor="offerAmount" className="text-sm font-medium">Your Offer Amount</label>
+                            <Input 
+                                id="offerAmount"
+                                type="number"
+                                value={offerAmount}
+                                onChange={(e) => setOfferAmount(Number(e.target.value))}
+                                max={request.amount}
+                                min={1}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
         )}
 
-        <AlertDialogFooter>
-          {isConfirmed ? (
-            feedbackSubmitted ? (
-                <AlertDialogCancel asChild><Button variant="secondary">Close</Button></AlertDialogCancel>
-            ) : (
-                <>
-                <AlertDialogCancel asChild><Button variant="ghost">Close</Button></AlertDialogCancel>
-                <AlertDialogAction onClick={handleFeedback} className="bg-accent hover:bg-accent/90">
-                    <Star className="w-4 h-4 mr-2" /> Submit Feedback
-                </AlertDialogAction>
-                </>
-            )
-          ) : (
-            <>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirm}>
-                Confirm & Reveal Info
-              </AlertDialogAction>
-            </>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline">Close</Button>
+          </DialogClose>
+          {canMakeOffer && (
+             <Button onClick={handleMakeOffer} disabled={isPending}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Send Offer
+            </Button>
           )}
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

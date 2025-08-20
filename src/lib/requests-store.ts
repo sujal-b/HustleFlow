@@ -1,5 +1,5 @@
 
-import type { ExchangeRequest } from './types';
+import type { ExchangeRequest, TransactionOffer } from './types';
 import type { UserDetails } from './user-store';
 
 // In-memory store for demo purposes
@@ -9,6 +9,7 @@ export const getRequests = (): ExchangeRequest[] => {
     // Expire requests that are older than their duration
     const now = new Date().getTime();
     const activeRequests = requests.filter(req => {
+        if (req.status === 'Fully Matched') return true; // Keep matched requests regardless of expiry for now
         const createdAt = new Date(req.createdAt).getTime();
         const durationInMs = parseInt(req.duration) * 24 * 60 * 60 * 1000;
         return now < (createdAt + durationInMs);
@@ -28,7 +29,7 @@ export const getRequests = (): ExchangeRequest[] => {
     });
 };
 
-type CreateRequestData = Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency'>;
+type CreateRequestData = Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency' | 'offers'>;
 
 export const addRequest = (
     request: CreateRequestData,
@@ -51,13 +52,14 @@ export const addRequest = (
             avatarUrl: `https://placehold.co/150x150.png?text=${userDetails.anonymousName.charAt(0)}`,
             room: userDetails.room,
             contact: userDetails.contact,
-        }
+        },
+        offers: []
     }
     requests.unshift(newRequest);
     return newRequest;
 };
 
-type UpdateRequestData = Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency' | 'realName' | 'avatarUrl' | 'room' | 'contact' | 'token'>;
+type UpdateRequestData = Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency' | 'offers' | 'realName' | 'avatarUrl' | 'room' | 'contact' | 'token'>;
 
 export const updateRequest = (
     id: string,
@@ -80,6 +82,7 @@ export const updateRequest = (
         createdAt: requests[requestIndex].createdAt,
         user: requests[requestIndex].user,
         status: requests[requestIndex].status,
+        offers: requests[requestIndex].offers,
     };
     return requests[requestIndex];
 }
@@ -94,4 +97,79 @@ export const deleteRequest = (id: string, userToken: string) => {
         throw new Error("You are not authorized to delete this request.");
     }
     requests.splice(requestIndex, 1);
+}
+
+// --- Offer Management ---
+
+export const makeOffer = (requestId: string, offerAmount: number, userDetails: UserDetails) => {
+    const request = requests.find(r => r.id === requestId);
+    if (!request) {
+        throw new Error("Request not found.");
+    }
+    if (request.user.token === userDetails.token) {
+        throw new Error("You cannot make an offer on your own request.");
+    }
+    if (request.offers.some(o => o.user.token === userDetails.token)) {
+        throw new Error("You have already made an offer on this request.");
+    }
+
+    const newOffer: TransactionOffer = {
+        id: `offer_${crypto.randomUUID()}`,
+        amount: offerAmount,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        user: {
+            token: userDetails.token,
+            name: userDetails.anonymousName,
+            realName: userDetails.name,
+            avatarUrl: `https://placehold.co/150x150.png?text=${userDetails.anonymousName.charAt(0)}`,
+            room: userDetails.room,
+            contact: userDetails.contact,
+        }
+    };
+    request.offers.push(newOffer);
+    return newOffer;
+}
+
+export const acceptOffer = (requestId: string, offerId: string, userToken: string) => {
+    const request = requests.find(r => r.id === requestId);
+    if (!request) {
+        throw new Error("Request not found.");
+    }
+    if (request.user.token !== userToken) {
+        throw new Error("You are not authorized to accept offers for this request.");
+    }
+    const offer = request.offers.find(o => o.id === offerId);
+    if (!offer) {
+        throw new Error("Offer not found.");
+    }
+
+    // Reject all other pending offers and accept this one
+    request.offers.forEach(o => {
+        if (o.status === 'pending') {
+            o.status = o.id === offerId ? 'accepted' : 'rejected';
+        }
+    });
+
+    // Mark request as fully matched
+    request.status = 'Fully Matched';
+}
+
+export const rejectOffer = (requestId: string, offerId: string, userToken: string) => {
+    const request = requests.find(r => r.id === requestId);
+    if (!request) {
+        throw new Error("Request not found.");
+    }
+    if (request.user.token !== userToken) {
+        throw new Error("You are not authorized to reject offers for this request.");
+    }
+    const offer = request.offers.find(o => o.id === offerId);
+    if (!offer) {
+        throw new Error("Offer not found.");
+    }
+    if (offer.status !== 'pending') {
+        throw new Error("This offer has already been actioned.");
+    }
+
+    offer.status = 'rejected';
 }
