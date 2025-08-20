@@ -93,16 +93,11 @@ export default {
           '0%': { transform: 'translateY(0vh) rotateZ(0deg)', opacity: '1' },
           '100%': { transform: 'translateY(110vh) rotateZ(720deg)', opacity: '0' },
         },
-        'pulse-once': {
-          '0%, 100%': { opacity: 1 },
-          '50%': { opacity: 0.7 },
-        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'fall': 'fall linear forwards',
-        'pulse-once': 'pulse-once 1.5s ease-out',
       },
     },
   },

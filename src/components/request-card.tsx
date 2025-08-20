@@ -106,7 +106,7 @@ export function RequestCard({ request, isHighlighted = false }: RequestCardProps
     <AlertDialog open={isDeleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
     <Card className={cn(
       "flex flex-col hover:shadow-lg transition-shadow duration-300 bg-card hover:bg-card/90",
-       isHighlighted && "relative ring-2 ring-accent ring-offset-2 ring-offset-background animate-pulse-once"
+       isHighlighted && "relative ring-2 ring-accent/80 ring-offset-2 ring-offset-background animate-pulse"
     )}>
       <CardHeader className="flex-row items-start gap-4 pb-4">
           <Avatar className="h-12 w-12 border-2 border-primary/20">
