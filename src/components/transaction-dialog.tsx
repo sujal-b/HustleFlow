@@ -87,7 +87,12 @@ export function TransactionDialog({ request, children }: TransactionDialogProps)
   const confirmedMatch = request.status === 'Fully Matched' ? 
     request.offers.find(o => o.status === 'accepted') : undefined;
   
-  const canMakeOffer = !isOwner && request.status !== 'Fully Matched' && !request.offers.some(o => o.user.token === currentUser?.token);
+  const hasActiveOffer = currentUser ? request.offers.some(o => o.user.token === currentUser.token && (o.status === 'pending' || o.status === 'accepted')) : false;
+
+  const canMakeOffer = !isOwner && request.status !== 'Fully Matched' && !hasActiveOffer;
+  
+  const isParticipant = isOwner || confirmedMatch?.user.token === currentUser?.token;
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -100,7 +105,7 @@ export function TransactionDialog({ request, children }: TransactionDialogProps)
           </DialogDescription>
         </DialogHeader>
 
-        {confirmedMatch && (currentUser?.token === confirmedMatch.user.token || isOwner) ? (
+        {confirmedMatch && isParticipant ? (
             // View for the two matched parties
             <div className="space-y-4 py-4">
                  <div className="flex flex-col items-center justify-center text-center p-8 bg-green-900/20 rounded-lg">
@@ -156,7 +161,7 @@ export function TransactionDialog({ request, children }: TransactionDialogProps)
                                 <p className="font-semibold line-through">{offer.user.name}</p>
                                 <p className="text-muted-foreground font-bold line-through">{currencyFormatter.format(offer.amount)}</p>
                             </div>
-                            <Badge variant={offer.status === 'accepted' ? 'default' : 'destructive'} className="capitalize">{offer.status}</Badge>
+                            <Badge variant={offer.status === 'accepted' ? 'default' : (offer.status === 'rejected' ? 'destructive' : 'secondary')} className="capitalize">{offer.status}</Badge>
                         </div>
                     ))}
                     </div>
@@ -166,9 +171,9 @@ export function TransactionDialog({ request, children }: TransactionDialogProps)
              // Non-owner's view
             <div className="py-4 space-y-4">
                 {request.status === 'Fully Matched' ? (
-                     <p className="text-center text-muted-foreground py-8">This request has been fully matched.</p>
-                ) : request.offers.some(o => o.user.token === currentUser?.token) ? (
-                    <p className="text-center text-muted-foreground py-8">You have already made an offer on this request.</p>
+                     <p className="text-center text-muted-foreground py-8">This request has been fully matched and is no longer available.</p>
+                ) : hasActiveOffer ? (
+                    <p className="text-center text-muted-foreground py-8">You have an active offer on this request. Please wait for the owner to respond.</p>
                 ) : (
                     <div className="space-y-4">
                         <div className="flex flex-col items-center justify-center text-center p-8 bg-secondary rounded-lg">

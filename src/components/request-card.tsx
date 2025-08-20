@@ -60,6 +60,7 @@ export function RequestCard({ request, isHighlighted = false }: RequestCardProps
   const [isEditSheetOpen, setEditSheetOpen] = useState(false);
   const [isDeleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [isViewDetailsDisabled, setIsViewDetailsDisabled] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
   
@@ -71,8 +72,14 @@ export function RequestCard({ request, isHighlighted = false }: RequestCardProps
         const isOwner = currentUser.token === request.user.token;
         const isAdmin = currentUser.token === ADMIN_TOKEN;
         setCanManage(isOwner || isAdmin);
+
+        if (request.status === 'Fully Matched') {
+          const acceptedOffer = request.offers.find(o => o.status === 'accepted');
+          const isParticipant = isOwner || acceptedOffer?.user.token === currentUser.token;
+          setIsViewDetailsDisabled(!isParticipant);
+        }
     }
-  }, [request.user.token]);
+  }, [request.user.token, request.status, request.offers]);
 
   const currencyFormatter = new Intl.NumberFormat('en-IN', {
     style: 'currency',
@@ -159,7 +166,12 @@ export function RequestCard({ request, isHighlighted = false }: RequestCardProps
       <CardFooter className="flex-col sm:flex-row sm:justify-between items-stretch sm:items-center gap-2 pt-4">
           <p className="text-xs text-muted-foreground">{timeAgo}</p>
           <TransactionDialog request={request}>
-          <Button variant={request.status === 'Fully Matched' ? 'default' : 'secondary'} className="w-full sm:w-auto">
+          <Button 
+            variant={request.status === 'Fully Matched' ? 'default' : 'secondary'} 
+            className="w-full sm:w-auto"
+            disabled={isViewDetailsDisabled}
+            aria-label={isViewDetailsDisabled ? "This request is already matched" : "View details"}
+          >
               View Details
           </Button>
           </TransactionDialog>
