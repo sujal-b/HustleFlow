@@ -144,7 +144,7 @@ export function RequestForm({ setSheetOpen, request }: RequestFormProps) {
             name="type"
             render={({ field }) => (
               <FormItem className="space-y-3">
-                <FormLabel>Your Payment Type</FormLabel>
+                <FormLabel>Exchange Type</FormLabel>
                 <FormControl>
                   <RadioGroup
                     onValueChange={field.onChange}

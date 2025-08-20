@@ -35,6 +35,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { deleteRequestAction } from '@/app/actions';
@@ -51,8 +52,6 @@ const statusColors: Record<ExchangeRequest['status'], string> = {
     "Fully Matched": "bg-green-900/50 text-green-300 border-green-300/50",
 }
 
-const ADMIN_TOKEN = "admin_super_secret_token";
-
 export function RequestCard({ request }: RequestCardProps) {
   const [canManage, setCanManage] = useState(false);
   const [isEditSheetOpen, setEditSheetOpen] = useState(false);
@@ -66,9 +65,7 @@ export function RequestCard({ request }: RequestCardProps) {
   useEffect(() => {
     const currentUser = getUserDetails();
     if (currentUser) {
-        const isOwner = currentUser.token === request.user.token;
-        const isAdmin = currentUser.token === ADMIN_TOKEN;
-        setCanManage(isOwner || isAdmin);
+        setCanManage(currentUser.token === request.user.token);
     }
   }, [request.user.token]);
 
@@ -101,9 +98,8 @@ export function RequestCard({ request }: RequestCardProps) {
   }
 
   return (
-    <>
     <AlertDialog open={isDeleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
-      <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300 bg-card hover:bg-card/90">
+    <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300 bg-card hover:bg-card/90">
       <CardHeader className="flex-row items-start gap-4 pb-4">
           <Avatar className="h-12 w-12 border-2 border-primary/20">
           <AvatarImage src={request.user.avatarUrl} alt={request.user.name} data-ai-hint="person abstract" />
@@ -181,6 +177,5 @@ export function RequestCard({ request }: RequestCardProps) {
           </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-    </>
   );
 }
