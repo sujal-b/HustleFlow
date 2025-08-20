@@ -40,6 +40,19 @@ const userDetailsSchema = z.object({
 
 type UserDetailsFormValues = z.infer<typeof userDetailsSchema>;
 
+async function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+        alert('This browser does not support desktop notification');
+        return;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+        console.log('Notification permission granted.');
+        // Later, we will use this permission to show notifications.
+    }
+}
+
 export function UserDetailsDialog({ open, setOpen, onSave }: UserDetailsDialogProps) {
   const form = useForm<UserDetailsFormValues>({
     resolver: zodResolver(userDetailsSchema),
@@ -53,6 +66,7 @@ export function UserDetailsDialog({ open, setOpen, onSave }: UserDetailsDialogPr
   const onSubmit = (data: UserDetailsFormValues) => {
     saveUserDetails(data);
     onSave();
+    requestNotificationPermission();
   };
   
   const handleOpenChange = (isOpen: boolean) => {
