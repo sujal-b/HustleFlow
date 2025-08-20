@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getRequests } from "@/lib/requests-store";
+import { getRequests } from "@/app/actions";
 import { getUserDetails } from "@/lib/user-store";
 import type { UserDetails } from "@/lib/user-store";
 import type { ExchangeRequest, UserInfo } from "@/lib/types";
@@ -41,7 +41,7 @@ export default function AdminPage() {
                 const allRequests = await getRequests();
                 setRequests(allRequests);
 
-                // ... rest of the logic
+                // Extract unique users from all requests
                 const uniqueUsers = new Map<string, UserInfo>();
 
                 allRequests.forEach(request => {

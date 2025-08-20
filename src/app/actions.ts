@@ -1,10 +1,43 @@
-
 "use server";
 
 import { revalidatePath } from "next/cache";
 import * as z from "zod";
-import { addRequest, updateRequest, deleteRequest, makeOffer, acceptOffer, rejectOffer } from "@/lib/requests-store";
+// Import admin and db from your firebase-admin setup
+import { db, admin } from "@/lib/firebase-admin"; 
+import { 
+  addRequest as addRequestToDb, 
+  updateRequest as updateRequestInDb, 
+  deleteRequest as deleteRequestFromDb, 
+  makeOffer as makeOfferInDb, 
+  acceptOffer as acceptOfferInDb, 
+  rejectOffer as rejectOfferInDb
+} from "@/lib/requests-store";
 import type { UserDetails } from "@/lib/user-store";
+import type { ExchangeRequest, UserInfo } from "@/lib/types";
+
+// --- NEW FUNCTION: Moved from requests-store.ts ---
+export async function getRequests(): Promise<ExchangeRequest[]> {
+  const snapshot = await db.collection('requests')
+      .orderBy('urgency', 'desc')
+      .orderBy('createdAt', 'desc')
+      .get();
+
+  const now = new Date().getTime();
+  const activeRequests: ExchangeRequest[] = [];
+
+  snapshot.forEach(doc => {
+      const request = doc.data() as ExchangeRequest;
+      const createdAt = new Date(request.createdAt).getTime();
+      const durationInMs = parseInt(request.duration) * 24 * 60 * 60 * 1000;
+
+      if (request.status !== 'Fully Matched' && now >= (createdAt + durationInMs)) {
+          // Expired request, filter out
+      } else {
+          activeRequests.push({ ...request, id: doc.id });
+      }
+  });
+  return activeRequests;
+};
 
 // Schema for creating a request (no ID)
 const createRequestFormSchema = z.object({
@@ -64,7 +97,7 @@ export async function createRequestAction(
   }
 
   try {
-    addRequest(validation.data, userDetails);
+    await addRequestToDb(validation.data, userDetails);
     revalidatePath("/");
     return { success: true, reasoning: `Your request has been successfully created.` };
   } catch (error) {
@@ -98,7 +131,7 @@ export async function updateRequestAction(
   const { id, ...requestData } = validation.data;
 
   try {
-    updateRequest(id, requestData, userDetails.token);
+    await updateRequestInDb(id, requestData, userDetails.token);
     revalidatePath("/");
     return { success: true, reasoning: `Your request has been successfully updated.` };
   } catch (error) {
@@ -127,7 +160,7 @@ export async function deleteRequestAction(
     }
 
     try {
-        deleteRequest(requestId, userDetails.token);
+        await deleteRequestFromDb(requestId, userDetails.token);
         revalidatePath("/");
         return { success: true, reasoning: "Your request has been deleted." };
     } catch (error) {
@@ -151,7 +184,7 @@ export async function makeOfferAction(
         return { success: false, error: "User details not found." };
     }
     try {
-        makeOffer(validation.data.requestId, validation.data.offerAmount, userDetails);
+        await makeOfferInDb(validation.data.requestId, validation.data.offerAmount, userDetails);
         revalidatePath("/");
         return { success: true, reasoning: "Your offer has been sent!" };
     } catch (error) {
@@ -172,7 +205,7 @@ export async function acceptOfferAction(
         return { success: false, error: "User details not found." };
     }
     try {
-        acceptOffer(requestId, offerId, userToken);
+        await acceptOfferInDb(requestId, offerId, userToken);
         revalidatePath("/");
         return { success: true, reasoning: "Offer accepted! Details revealed." };
     } catch (error) {
@@ -193,7 +226,7 @@ export async function rejectOfferAction(
         return { success: false, error: "User details not found." };
     }
     try {
-        rejectOffer(requestId, offerId, userToken);
+        await rejectOfferInDb(requestId, offerId, userToken);
         revalidatePath("/");
         return { success: true, reasoning: "Offer rejected." };
     } catch (error) {

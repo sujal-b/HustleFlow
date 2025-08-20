@@ -1,37 +1,15 @@
-import { db, admin } from './firebase-admin'; // Import 'admin' here
+"use server"; // Keep this file as server-only
+
+import { db, admin } from './firebase-admin';
 import type { ExchangeRequest, TransactionOffer } from './types';
 import type { UserDetails } from './user-store';
 
 const requestsCollection = db.collection('requests');
 const ADMIN_TOKEN = "admin_super_secret_token";
 
-export const getRequests = async (): Promise<ExchangeRequest[]> => {
-    const snapshot = await requestsCollection
-        .orderBy('urgency', 'desc') // 'urgent' comes before 'flexible'
-        .orderBy('createdAt', 'desc') // Then newest first
-        .get();
-
-    const now = new Date().getTime();
-    const activeRequests: ExchangeRequest[] = [];
-
-    snapshot.forEach(doc => {
-        const request = doc.data() as ExchangeRequest;
-        const createdAt = new Date(request.createdAt).getTime();
-        const durationInMs = parseInt(request.duration) * 24 * 60 * 60 * 1000;
-
-        if (request.status !== 'Fully Matched' && now >= (createdAt + durationInMs)) {
-            // This is an expired request, you could optionally delete it here
-            // For now, we'll just filter it out
-        } else {
-            activeRequests.push({ ...request, id: doc.id });
-        }
-    });
-
-    return activeRequests;
-};
-
 type CreateRequestData = Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency' | 'offers'>;
 
+// Renamed to addRequestToDb
 export const addRequest = async (
     request: CreateRequestData,
     userDetails: UserDetails,
@@ -40,7 +18,7 @@ export const addRequest = async (
         throw new Error("User details not found. Cannot create request.");
     }
     
-    const newRequest: Omit<ExchangeRequest, 'id'> = {
+    const newRequestData: Omit<ExchangeRequest, 'id'> = {
         ...request,
         currency: 'INR',
         status: 'Open',
@@ -56,12 +34,13 @@ export const addRequest = async (
         offers: []
     }
     
-    const docRef = await requestsCollection.add(newRequest);
-    return { ...newRequest, id: docRef.id };
+    const docRef = await requestsCollection.add(newRequestData);
+    return { ...newRequestData, id: docRef.id };
 };
 
 type UpdateRequestData = Omit<ExchangeRequest, 'id' | 'createdAt' | 'user' | 'status' | 'currency' | 'offers' | 'realName' | 'avatarUrl' | 'room' | 'contact' | 'token'>;
 
+// Renamed to updateRequestInDb
 export const updateRequest = async (
     id: string,
     updatedData: UpdateRequestData,
@@ -86,6 +65,7 @@ export const updateRequest = async (
     return { ...request, ...updatedData, id: doc.id };
 }
 
+// Renamed to deleteRequestFromDb
 export const deleteRequest = async (id: string, userToken: string) => {
     const docRef = requestsCollection.doc(id);
     const doc = await docRef.get();
@@ -105,7 +85,7 @@ export const deleteRequest = async (id: string, userToken: string) => {
 }
 
 // --- Offer Management ---
-
+// Renamed to makeOfferInDb
 export const makeOffer = async (requestId: string, offerAmount: number, userDetails: UserDetails) => {
     const docRef = requestsCollection.doc(requestId);
     const doc = await docRef.get();
@@ -145,6 +125,7 @@ export const makeOffer = async (requestId: string, offerAmount: number, userDeta
     return newOffer;
 }
 
+// Renamed to acceptOfferInDb
 export const acceptOffer = async (requestId: string, offerId: string, userToken: string) => {
     const docRef = requestsCollection.doc(requestId);
     const doc = await docRef.get();
@@ -170,6 +151,7 @@ export const acceptOffer = async (requestId: string, offerId: string, userToken:
     });
 }
 
+// Renamed to rejectOfferInDb
 export const rejectOffer = async (requestId: string, offerId: string, userToken: string) => {
     const docRef = requestsCollection.doc(requestId);
     const doc = await docRef.get();
