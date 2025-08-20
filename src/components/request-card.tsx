@@ -44,6 +44,7 @@ import { useRouter } from 'next/navigation';
 
 interface RequestCardProps {
   request: ExchangeRequest;
+  isHighlighted?: boolean;
 }
 
 const ADMIN_TOKEN = "admin_super_secret_token";
@@ -54,7 +55,7 @@ const statusColors: Record<ExchangeRequest['status'], string> = {
     "Fully Matched": "bg-green-900/50 text-green-300 border-green-300/50",
 }
 
-export function RequestCard({ request }: RequestCardProps) {
+export function RequestCard({ request, isHighlighted = false }: RequestCardProps) {
   const [canManage, setCanManage] = useState(false);
   const [isEditSheetOpen, setEditSheetOpen] = useState(false);
   const [isDeleteAlertOpen, setDeleteAlertOpen] = useState(false);
@@ -103,7 +104,10 @@ export function RequestCard({ request }: RequestCardProps) {
 
   return (
     <AlertDialog open={isDeleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
-    <Card className="flex flex-col hover:shadow-lg transition-shadow duration-300 bg-card hover:bg-card/90">
+    <Card className={cn(
+      "flex flex-col hover:shadow-lg transition-shadow duration-300 bg-card hover:bg-card/90",
+       isHighlighted && "relative ring-2 ring-accent ring-offset-2 ring-offset-background animate-pulse-once"
+    )}>
       <CardHeader className="flex-row items-start gap-4 pb-4">
           <Avatar className="h-12 w-12 border-2 border-primary/20">
           <AvatarImage src={request.user.avatarUrl} alt={request.user.name} data-ai-hint="person abstract" />

@@ -67,6 +67,24 @@ export function MainPage({ requests }: { requests: ExchangeRequest[] }) {
      if (filter === 'all') return otherRequests;
      return otherRequests.filter(request => request.type === filter);
   }, [filter, otherRequests]);
+  
+  const isHighlighted = (request: ExchangeRequest): boolean => {
+    if (!currentUser) return false;
+
+    // Highlight for the request owner if there's a new pending offer.
+    const isOwner = request.user.token === currentUser.token;
+    if (isOwner) {
+      return request.offers.some(o => o.status === 'pending');
+    }
+
+    // Highlight for the offer maker if their offer was accepted.
+    const myOffer = request.offers.find(o => o.user.token === currentUser.token);
+    if (myOffer && myOffer.status === 'accepted') {
+      return true;
+    }
+
+    return false;
+  };
 
 
   return (
@@ -79,11 +97,15 @@ export function MainPage({ requests }: { requests: ExchangeRequest[] }) {
              <div className="mb-12">
                 <div className="mb-6">
                     <h2 className="font-headline text-3xl font-bold tracking-tight">My Activity</h2>
-                    <p className="text-muted-foreground">Requests you've created or made offers on.</p>
+                    <p className="text-muted-foreground">Requests you've created or made offers on. Highlights indicate an action is needed.</p>
                 </div>
                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {myActivityRequests.map((request) => (
-                        <RequestCard key={request.id} request={request} />
+                        <RequestCard 
+                          key={request.id} 
+                          request={request}
+                          isHighlighted={isHighlighted(request)} 
+                        />
                     ))}
                 </div>
              </div>
