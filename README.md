@@ -1,7 +1,5 @@
 # HustleFlow
 
-To get started, take a look at src/app/page.tsx.
-
 ## Running Locally
 
 To run this project on your local machine, follow these steps:
