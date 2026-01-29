@@ -1,4 +1,5 @@
 # HustleFlow
+Inter-College safe money exchange
 
 ## Running Locally
 
